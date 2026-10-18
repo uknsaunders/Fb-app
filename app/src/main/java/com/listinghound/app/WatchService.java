@@ -22,6 +22,7 @@ public class WatchService extends Service {
     public static final String ACT_SLOWER = "com.listinghound.SLOWER";
     public static final String ACT_CHECK = "com.listinghound.CHECK";
     public static final String ACT_RESCHEDULE = "com.listinghound.RESCHEDULE";
+    public static final String ACT_ALARM = "com.listinghound.ALARM";
 
     private Handler handler;
     private ExecutorService worker;
@@ -73,6 +74,17 @@ public class WatchService extends Service {
 
             case ACT_RESCHEDULE:
                 reschedule();
+                break;
+
+            case ACT_ALARM:
+                // Woken by the system alarm: run if a check is due (the in-app timer may have been paused)
+                holdWakeLock();
+                if (!busy && System.currentTimeMillis() >= Store.nextCheck(this) - 20_000L) {
+                    handler.removeCallbacks(tick);
+                    handler.post(tick);
+                } else if (!busy) {
+                    AlarmReceiver.set(this, Store.nextCheck(this));
+                }
                 break;
 
             case ACT_CHECK:
@@ -180,6 +192,7 @@ public class WatchService extends Service {
         long delay = Math.max(60_000L, base + jitter);
         Store.setNextCheck(this, System.currentTimeMillis() + delay);
         handler.postDelayed(tick, delay);
+        AlarmReceiver.set(this, System.currentTimeMillis() + delay);
     }
 
     /** Interval changed: keep the last check, move the next one. */
@@ -191,6 +204,7 @@ public class WatchService extends Service {
         long delay = last == 0 ? 0 : Math.max(5_000L, last + base - System.currentTimeMillis());
         Store.setNextCheck(this, System.currentTimeMillis() + delay);
         handler.postDelayed(tick, delay);
+        AlarmReceiver.set(this, System.currentTimeMillis() + delay);
     }
 
     private void stopWatching() {
@@ -198,6 +212,7 @@ public class WatchService extends Service {
         Store.setNextCheck(this, 0);
         Store.setStopAt(this, 0);
         if (handler != null) handler.removeCallbacks(tick);
+        AlarmReceiver.cancel(this);
         if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
         stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();

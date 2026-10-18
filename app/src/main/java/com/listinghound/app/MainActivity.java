@@ -32,7 +32,7 @@ import java.util.List;
 public class MainActivity extends Activity {
 
     private TextView tvState, tvDetail, tvLogin;
-    private View dot, rowBattery;
+    private View dot, rowBattery, rowExact;
     private Button btnToggle, btnLogin, btnSlower;
     private Spinner spInterval, spStopAfter;
     private LinearLayout llSearches, llFinds;
@@ -66,6 +66,7 @@ public class MainActivity extends Activity {
         tvLogin = findViewById(R.id.tvLogin);
         dot = findViewById(R.id.dot);
         rowBattery = findViewById(R.id.rowBattery);
+        rowExact = findViewById(R.id.rowExact);
         btnToggle = findViewById(R.id.btnToggle);
         btnLogin = findViewById(R.id.btnLogin);
         btnSlower = findViewById(R.id.btnSlower);
@@ -84,6 +85,7 @@ public class MainActivity extends Activity {
         });
         btnLogin.setOnClickListener(v -> loginOrOut());
         findViewById(R.id.btnBattery).setOnClickListener(v -> askBattery());
+        findViewById(R.id.btnExact).setOnClickListener(v -> askExact());
         findViewById(R.id.btnAdd).setOnClickListener(v ->
                 startActivity(new Intent(this, EditSearchActivity.class)));
         findViewById(R.id.btnClear).setOnClickListener(v -> {
@@ -135,6 +137,8 @@ public class MainActivity extends Activity {
                     .append(" every ").append(Store.intervalMin(this)).append(" min");
             long next = Store.nextCheck(this);
             if (next == 0) d.append("\nChecking now…");
+            else if (next < System.currentTimeMillis() - 60_000L)
+                d.append("\nCheck overdue (was due ").append(Notif.time(this, next)).append(") — phone paused it");
             else d.append("\nNext check ").append(Notif.time(this, next));
             long stopAt = Store.stopAt(this);
             if (stopAt > 0) d.append(" · stops ").append(Notif.time(this, stopAt));
@@ -286,6 +290,19 @@ public class MainActivity extends Activity {
         PowerManager pm = getSystemService(PowerManager.class);
         boolean ignoring = pm.isIgnoringBatteryOptimizations(getPackageName());
         rowBattery.setVisibility(ignoring ? View.GONE : View.VISIBLE);
+        rowExact.setVisibility(AlarmReceiver.canBeExact(this) ? View.GONE : View.VISIBLE);
+        // Permissions may have just been granted: put the alarm on the precise path
+        if (Store.running(this)) WatchService.send(this, WatchService.ACT_RESCHEDULE);
+    }
+
+    private void askExact() {
+        if (Build.VERSION.SDK_INT < 31) return;
+        try {
+            startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                    Uri.parse("package:" + getPackageName())));
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(this, "Open Settings › Apps › Listing Hound › Alarms & reminders", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void askBattery() {

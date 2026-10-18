@@ -146,12 +146,39 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Battery saver may pause checks when the screen is off"
+                    android:text="Battery saving is pausing checks when the screen is off. Tap Allow, then choose Unrestricted / Allow."
                     android:textColor="@color/subtext"
                     android:textSize="14sp" />
 
                 <Button
                     android:id="@+id/btnBattery"
+                    style="@style/TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Allow" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/rowExact"
+            style="@style/Card">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Checks can drift by up to 15 min while the phone sleeps. Allow alarms for on-time checks."
+                    android:textColor="@color/subtext"
+                    android:textSize="14sp" />
+
+                <Button
+                    android:id="@+id/btnExact"
                     style="@style/TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
