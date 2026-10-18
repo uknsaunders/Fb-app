@@ -1,30 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="432" height="432">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72" width="432" height="432">
   <rect width="108" height="108" fill="#E8590C"/>
-  <!-- ears -->
-  <g transform="rotate(14 34 60)"><path fill="#6B4226" d="M23,60a11,20 0 1,0 22,0a11,20 0 1,0 -22,0z"/></g>
-  <g transform="rotate(-14 74 60)"><path fill="#6B4226" d="M63,60a11,20 0 1,0 22,0a11,20 0 1,0 -22,0z"/></g>
+  <g transform="translate(54 56) scale(0.72) translate(-54 -50)">
+  <!-- shaggy ears -->
+  <path fill="#3E2619" d="M32,40 C21,45 17,62 19,82 l3,-4 l2,6 l3,-5 l3,6 l3,-5 l3,5 l2,-5 C40,68 41,50 38,43 Z"/>
+  <path fill="#3E2619" d="M76,40 C87,45 91,62 89,82 l-3,-4 l-2,6 l-3,-5 l-3,6 l-3,-5 l-3,5 l-2,-5 C68,68 67,50 70,43 Z"/>
   <!-- head -->
-  <path fill="#FFFFFF" d="M32,56a22,21 0 1,0 44,0a22,21 0 1,0 -44,0z"/>
-  <!-- brown cap & eye patch -->
-  <path fill="#8B5A2B" d="M38,44a16,10 0 1,0 32,0a16,10 0 1,0 -32,0z"/>
-  <path fill="#8B5A2B" d="M56,54a8,7 0 1,0 16,0a8,7 0 1,0 -16,0z"/>
-  <!-- white blaze down the middle -->
-  <path fill="#FFFFFF" d="M50.5,38 L57.5,38 L56.5,60 L51.5,60 Z"/>
-  <!-- topknot + bow -->
-  <path fill="#FFFFFF" d="M48,33a6,6 0 1,0 12,0a6,6 0 1,0 -12,0z"/>
-  <path fill="#FFD43B" d="M54,31 L46.5,27 L46.5,35 Z M54,31 L61.5,27 L61.5,35 Z"/>
-  <path fill="#FFD43B" d="M52,31a2,2 0 1,0 4,0a2,2 0 1,0 -4,0z"/>
-  <!-- eyes -->
-  <path fill="#1F1B16" d="M42.5,54a3.5,3.5 0 1,0 7,0a3.5,3.5 0 1,0 -7,0z"/>
-  <path fill="#1F1B16" d="M58.5,54a3.5,3.5 0 1,0 7,0a3.5,3.5 0 1,0 -7,0z"/>
-  <path fill="#FFFFFF" d="M45,53a1.1,1.1 0 1,0 2.2,0a1.1,1.1 0 1,0 -2.2,0z"/>
-  <path fill="#FFFFFF" d="M61,53a1.1,1.1 0 1,0 2.2,0a1.1,1.1 0 1,0 -2.2,0z"/>
-  <!-- muzzle -->
-  <path fill="#F1EAE0" d="M43,66a11,8 0 1,0 22,0a11,8 0 1,0 -22,0z"/>
-  <!-- nose -->
-  <path fill="#1F1B16" d="M50.2,62a3.8,2.8 0 1,0 7.6,0a3.8,2.8 0 1,0 -7.6,0z"/>
-  <!-- mouth -->
-  <path d="M54,64.5 L54,67 M54,67 Q51,70 48.5,68 M54,67 Q57,70 59.5,68" stroke="#1F1B16" stroke-width="1.3" stroke-linecap="round" fill="none"/>
-  <!-- tongue -->
-  <path fill="#F06595" d="M52.2,68.6 Q54,72.5 55.8,68.6 Z"/>
+  <path fill="#FFFFFF" d="M31,56a23,22 0 1,0 46,0a23,22 0 1,0 -46,0z"/>
+  <!-- spiky topknot -->
+  <path fill="#3E2619" d="M43,36 L40,23 L46,29 L47,16 L51,27 L54,14 L57,27 L61,16 L62,29 L68,23 L65,36 Z"/>
+  <!-- dark brown hood, scruffy edge over the cheeks -->
+  <path fill="#3E2619" d="M31,58 C30,40 41,31 54,31 C67,31 78,40 77,58 L74,62 L72,56 L69,61 L66,55 L42,55 L39,61 L36,56 L34,62 Z"/>
+  <!-- lighter brown highlights -->
+  <path fill="#6B4A35" d="M37,44 C40,37 46,34 50,34 L47,40 L43,39 L42,45 Z"/>
+  <path fill="#6B4A35" d="M71,44 C68,37 62,34 58,34 L61,40 L65,39 L66,45 Z"/>
+  <!-- white blaze rising into a forehead tuft -->
+  <path fill="#FFFFFF" d="M50.5,60 L57.5,60 L58,46 C62,42 62,36 58.5,32 L56.5,36 L54,31 L51.5,36 L49.5,32 C46,36 46,42 50,46 Z"/>
+  <!-- white beard / muzzle, shaggy bottom -->
+  <path fill="#F6F0E8" d="M40,63 C40,57 47,55 54,55 C61,55 68,57 68,63 C68,68 66,71 65,74 l-2,-3 l-2,4 l-2,-3 l-2,4 l-2,-4 l-2,4 l-2,-3 l-2,3 l-2,-4 l-2,3 C41,70 40,67 40,63 Z"/>
+  <!-- eyes in brown patches -->
+  <path fill="#6B4A35" d="M40,51a5.5,5 0 1,0 11,0a5.5,5 0 1,0 -11,0z"/>
+  <path fill="#6B4A35" d="M57,51a5.5,5 0 1,0 11,0a5.5,5 0 1,0 -11,0z"/>
+  <path fill="#120B07" d="M42.2,51a3.3,3.3 0 1,0 6.6,0a3.3,3.3 0 1,0 -6.6,0z"/>
+  <path fill="#120B07" d="M59.2,51a3.3,3.3 0 1,0 6.6,0a3.3,3.3 0 1,0 -6.6,0z"/>
+  <path fill="#FFFFFF" d="M44.3,50a1.1,1.1 0 1,0 2.2,0a1.1,1.1 0 1,0 -2.2,0z"/>
+  <path fill="#FFFFFF" d="M61.3,50a1.1,1.1 0 1,0 2.2,0a1.1,1.1 0 1,0 -2.2,0z"/>
+  <!-- big black nose -->
+  <path fill="#120B07" d="M49,60a5,3.6 0 1,0 10,0a5,3.6 0 1,0 -10,0z"/>
+  <path fill="#5A4A42" d="M51.5,59a1.4,0.8 0 1,0 2.8,0a1.4,0.8 0 1,0 -2.8,0z"/>
+  <!-- mouth hint -->
+  <path d="M54,63.5 L54,65.5 M54,65.5 Q51.5,67.5 49.5,66.2 M54,65.5 Q56.5,67.5 58.5,66.2" stroke="#8A7A6E" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+  <!-- whisker strands in the beard -->
+  <path d="M45,64 L41,62 M45,66 L41,67 M63,64 L67,62 M63,66 L67,67" stroke="#D9CFC3" stroke-width="0.9" stroke-linecap="round" fill="none"/>
+  </g>
 </svg>
