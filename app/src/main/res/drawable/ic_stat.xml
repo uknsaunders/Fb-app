@@ -1,13 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Shih Tzu head silhouette for the status bar (white only, eyes and nose cut out) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:rotation="14" android:pivotX="30" android:pivotY="60">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M18,60a12,24 0 1,0 24,0a12,24 0 1,0 -24,0z" />
+    </group>
+    <group android:rotation="-14" android:pivotX="78" android:pivotY="60">
+        <path android:fillColor="#FFFFFFFF" android:pathData="M66,60a12,24 0 1,0 24,0a12,24 0 1,0 -24,0z" />
+    </group>
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M10,3a7,7 0,1 0,4.2 12.6l5.1,5.1 1.4,-1.4 -5.1,-5.1A7,7 0,0 0,10 3zM10,5a5,5 0,1 1,0 10a5,5 0,0 1,0 -10z" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M10,7.2a0.9,0.9 0,0 1,0.9 0.9v1h1a0.9,0.9 0,0 1,0 1.8h-1v1a0.9,0.9 0,0 1,-1.8 0v-1h-1a0.9,0.9 0,0 1,0 -1.8h1v-1A0.9,0.9 0,0 1,10 7.2z" />
+        android:fillType="evenOdd"
+        android:pathData="M28,56a26,25 0 1,0 52,0a26,25 0 1,0 -52,0z M41,53a5,5 0 1,0 10,0a5,5 0 1,0 -10,0z M57,53a5,5 0 1,0 10,0a5,5 0 1,0 -10,0z M49,65a5,3.6 0 1,0 10,0a5,3.6 0 1,0 -10,0z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M54,28 L44,22 L44,34 Z M54,28 L64,22 L64,34 Z" />
 </vector>

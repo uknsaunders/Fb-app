@@ -1,15 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Shih Tzu: brown and white, yellow topknot bow -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Lens ring -->
+    <group android:rotation="14" android:pivotX="34" android:pivotY="60">
+        <path android:fillColor="#6B4226" android:pathData="M23,60a11,20 0 1,0 22,0a11,20 0 1,0 -22,0z" />
+    </group>
+    <group android:rotation="-14" android:pivotX="74" android:pivotY="60">
+        <path android:fillColor="#6B4226" android:pathData="M63,60a11,20 0 1,0 22,0a11,20 0 1,0 -22,0z" />
+    </group>
+    <path android:fillColor="#FFFFFF" android:pathData="M32,56a22,21 0 1,0 44,0a22,21 0 1,0 -44,0z" />
+    <path android:fillColor="#8B5A2B" android:pathData="M38,44a16,10 0 1,0 32,0a16,10 0 1,0 -32,0z" />
+    <path android:fillColor="#8B5A2B" android:pathData="M56,54a8,7 0 1,0 16,0a8,7 0 1,0 -16,0z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M50.5,38 L57.5,38 L56.5,60 L51.5,60 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M48,33a6,6 0 1,0 12,0a6,6 0 1,0 -12,0z" />
+    <path android:fillColor="#FFD43B" android:pathData="M54,31 L46.5,27 L46.5,35 Z M54,31 L61.5,27 L61.5,35 Z" />
+    <path android:fillColor="#FFD43B" android:pathData="M52,31a2,2 0 1,0 4,0a2,2 0 1,0 -4,0z" />
+    <path android:fillColor="#1F1B16" android:pathData="M42.5,54a3.5,3.5 0 1,0 7,0a3.5,3.5 0 1,0 -7,0z" />
+    <path android:fillColor="#1F1B16" android:pathData="M58.5,54a3.5,3.5 0 1,0 7,0a3.5,3.5 0 1,0 -7,0z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M45,53a1.1,1.1 0 1,0 2.2,0a1.1,1.1 0 1,0 -2.2,0z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M61,53a1.1,1.1 0 1,0 2.2,0a1.1,1.1 0 1,0 -2.2,0z" />
+    <path android:fillColor="#F1EAE0" android:pathData="M43,66a11,8 0 1,0 22,0a11,8 0 1,0 -22,0z" />
+    <path android:fillColor="#1F1B16" android:pathData="M50.2,62a3.8,2.8 0 1,0 7.6,0a3.8,2.8 0 1,0 -7.6,0z" />
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M48,30a18,18 0,1 0,10.6 32.6l11.7,11.7a3.4,3.4 0,0 0,4.8 -4.8L63.4,57.8A18,18 0,0 0,48 30zM48,36.6a11.4,11.4 0,1 1,0 22.8a11.4,11.4 0,0 1,0 -22.8z" />
-    <!-- Ping dot -->
-    <path
-        android:fillColor="#FFFFD43B"
-        android:pathData="M72,32m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+        android:pathData="M54,64.5 L54,67 M54,67 Q51,70 48.5,68 M54,67 Q57,70 59.5,68"
+        android:strokeColor="#1F1B16"
+        android:strokeWidth="1.3"
+        android:strokeLineCap="round" />
+    <path android:fillColor="#F06595" android:pathData="M52.2,68.6 Q54,72.5 55.8,68.6 Z" />
 </vector>
