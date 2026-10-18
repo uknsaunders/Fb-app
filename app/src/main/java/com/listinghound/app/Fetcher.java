@@ -10,8 +10,8 @@ import org.json.JSONTokener;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -21,7 +21,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+
+import okhttp3.Dns;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 /** Loads a Marketplace search page and pulls the listings out of it. */
 public final class Fetcher {
@@ -67,35 +74,53 @@ public final class Fetcher {
         }
     }
 
+    /** Tries IPv4 addresses before IPv6 ones, so a broken IPv6 route can't stall every check. */
+    private static final Dns IPV4_FIRST = host -> {
+        List<InetAddress> all = Dns.SYSTEM.lookup(host);
+        List<InetAddress> v4 = new ArrayList<>();
+        List<InetAddress> v6 = new ArrayList<>();
+        for (InetAddress a : all) (a instanceof Inet4Address ? v4 : v6).add(a);
+        v4.addAll(v6);
+        return v4;
+    };
+
+    static final OkHttpClient CLIENT = new OkHttpClient.Builder()
+            .dns(IPV4_FIRST)
+            .connectTimeout(8, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .callTimeout(75, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .build();
+
     public static Result fetch(Search s) {
         Result r = new Result();
-        HttpURLConnection con = null;
+        Request.Builder rb = new Request.Builder()
+                .url(buildUrl(s))
+                .header("User-Agent", UA)
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                .header("Accept-Language", "en-GB,en;q=0.9")
+                .header("Sec-Fetch-Dest", "document")
+                .header("Sec-Fetch-Mode", "navigate")
+                .header("Sec-Fetch-Site", "none")
+                .header("Upgrade-Insecure-Requests", "1");
+        String cookie = null;
         try {
-            con = (HttpURLConnection) new URL(buildUrl(s)).openConnection();
-            con.setConnectTimeout(20000);
-            con.setReadTimeout(30000);
-            con.setInstanceFollowRedirects(true);
-            con.setRequestProperty("User-Agent", UA);
-            con.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-            con.setRequestProperty("Accept-Language", "en-GB,en;q=0.9");
-            con.setRequestProperty("Sec-Fetch-Dest", "document");
-            con.setRequestProperty("Sec-Fetch-Mode", "navigate");
-            con.setRequestProperty("Sec-Fetch-Site", "none");
-            con.setRequestProperty("Upgrade-Insecure-Requests", "1");
-            String cookie = null;
-            try {
-                cookie = CookieManager.getInstance().getCookie(FB);
-            } catch (Throwable ignored) {
-            }
-            if (cookie != null && !cookie.isEmpty()) con.setRequestProperty("Cookie", cookie);
+            cookie = CookieManager.getInstance().getCookie(FB);
+        } catch (Throwable ignored) {
+        }
+        if (cookie != null && !cookie.isEmpty()) rb.header("Cookie", cookie);
 
-            r.httpCode = con.getResponseCode();
-            String finalUrl = con.getURL().toString();
+        try (Response resp = CLIENT.newCall(rb.build()).execute()) {
+            r.httpCode = resp.code();
+            String finalUrl = resp.request().url().toString();
             if (r.httpCode >= 400) {
                 r.error = "Facebook returned error " + r.httpCode;
                 return r;
             }
-            String html = read(con.getInputStream());
+            ResponseBody body = resp.body();
+            String html = body == null ? "" : read(body.byteStream());
             parse(html, r.listings);
             if (r.listings.isEmpty()) {
                 boolean wall = finalUrl.contains("/login") || finalUrl.contains("/checkpoint")
@@ -103,11 +128,17 @@ public final class Fetcher {
                 if (wall) r.loginWall = true;
             }
         } catch (Exception e) {
-            r.error = e.getClass().getSimpleName() + (e.getMessage() == null ? "" : ": " + e.getMessage());
-        } finally {
-            if (con != null) con.disconnect();
+            r.error = friendly(e);
         }
         return r;
+    }
+
+    private static String friendly(Exception e) {
+        if (e instanceof java.net.UnknownHostException) return "No internet connection";
+        if (e instanceof java.net.SocketTimeoutException || e instanceof java.io.InterruptedIOException)
+            return "Facebook took too long to answer";
+        if (e instanceof java.net.ConnectException) return "Couldn't connect to Facebook";
+        return e.getClass().getSimpleName();
     }
 
     private static String read(InputStream in) throws Exception {
@@ -233,24 +264,12 @@ public final class Fetcher {
     /** Small thumbnail for a notification; null on any failure. */
     public static Bitmap thumbnail(String url) {
         if (url == null || url.isEmpty()) return null;
-        HttpURLConnection con = null;
-        try {
-            con = (HttpURLConnection) new URL(url).openConnection();
-            con.setConnectTimeout(10000);
-            con.setReadTimeout(15000);
-            con.setRequestProperty("User-Agent", UA);
-            if (con.getResponseCode() != 200) return null;
-            byte[] data;
-            try (InputStream is = con.getInputStream()) {
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                byte[] buf = new byte[8192];
-                int n;
-                while ((n = is.read(buf)) > 0) {
-                    bos.write(buf, 0, n);
-                    if (bos.size() > 3 * 1024 * 1024) return null;
-                }
-                data = bos.toByteArray();
-            }
+        Request req = new Request.Builder().url(url).header("User-Agent", UA).build();
+        try (Response resp = CLIENT.newCall(req).execute()) {
+            ResponseBody body = resp.body();
+            if (!resp.isSuccessful() || body == null) return null;
+            byte[] data = body.bytes();
+            if (data.length > 3 * 1024 * 1024) return null;
             BitmapFactory.Options o = new BitmapFactory.Options();
             o.inJustDecodeBounds = true;
             BitmapFactory.decodeByteArray(data, 0, data.length, o);
@@ -261,8 +280,6 @@ public final class Fetcher {
             return BitmapFactory.decodeByteArray(data, 0, data.length, o);
         } catch (Exception e) {
             return null;
-        } finally {
-            if (con != null) con.disconnect();
         }
     }
 }
