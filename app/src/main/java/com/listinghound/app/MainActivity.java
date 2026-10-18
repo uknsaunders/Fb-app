@@ -383,6 +383,7 @@ public class MainActivity extends Activity {
     private String findDetail(Listing l) {
         StringBuilder b = new StringBuilder(l.searchName);
         if (!l.city.isEmpty()) b.append(" · ").append(l.city);
+        if (l.km >= 0) b.append(" (").append(Math.round(l.km)).append(" km)");
         String timing = Timing.explain(this, l);
         if (!timing.isEmpty()) {
             b.append('\n').append(timing);

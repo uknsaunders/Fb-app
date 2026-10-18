@@ -13,6 +13,9 @@ public class Listing {
     /** Numeric price, or -1 when unknown. */
     public double amount = -1;
     public String city = "";
+    public String state = "";
+    /** Distance from the search centre in km, or -1 if unknown. */
+    public double km = -1;
     public String imageUrl = "";
 
     // Only for recent finds
@@ -64,6 +67,8 @@ public class Listing {
             j.put("price", price);
             j.put("amount", amount);
             j.put("city", city);
+            j.put("state", state);
+            j.put("km", km);
             j.put("image", imageUrl);
             j.put("search", searchName);
             j.put("foundAt", foundAt);
@@ -84,6 +89,8 @@ public class Listing {
         l.price = j.optString("price", "");
         l.amount = j.optDouble("amount", -1);
         l.city = j.optString("city", "");
+        l.state = j.optString("state", "");
+        l.km = j.optDouble("km", -1);
         l.imageUrl = j.optString("image", "");
         l.searchName = j.optString("search", "");
         l.foundAt = j.optLong("foundAt", 0);

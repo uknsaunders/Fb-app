@@ -25,6 +25,8 @@ public class Search {
     public boolean enabled = true;
     public boolean alertDrops = true;
     public boolean alertUpdates = true;
+    /** Ignore listings further away than the radius, even if Facebook includes them. */
+    public boolean strictArea = true;
 
     public String displayName() {
         return name.trim().isEmpty() ? query.trim() : name.trim();
@@ -82,6 +84,7 @@ public class Search {
             j.put("enabled", enabled);
             j.put("alertDrops", alertDrops);
             j.put("alertUpdates", alertUpdates);
+            j.put("strictArea", strictArea);
         } catch (JSONException ignored) {
         }
         return j;
@@ -101,6 +104,7 @@ public class Search {
         s.enabled = j.optBoolean("enabled", true);
         s.alertDrops = j.optBoolean("alertDrops", true);
         s.alertUpdates = j.optBoolean("alertUpdates", true);
+        s.strictArea = j.optBoolean("strictArea", true);
         return s;
     }
 

@@ -113,7 +113,8 @@ public final class Notif {
             PendingIntent pi = PendingIntent.getActivity(c, l.key().hashCode(), view,
                     PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
             String title = l.headline();
-            String text = l.searchName + (l.city.isEmpty() ? "" : " · " + l.city);
+            String text = l.searchName + (l.city.isEmpty() ? "" : " · " + l.city)
+                    + (l.km >= 0 ? " (" + Math.round(l.km) + " km)" : "");
             if ("new".equals(l.kind) && l.listedAt > 0) text += " · listed " + time(c, l.listedAt);
             if ("updated".equals(l.kind) && !l.oldTitle.isEmpty()) text += " · was “" + l.oldTitle + "”";
             Notification.Builder b = new Notification.Builder(c, CH_FINDS)

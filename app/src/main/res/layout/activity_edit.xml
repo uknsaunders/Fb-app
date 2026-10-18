@@ -109,6 +109,16 @@
                 android:inputType="textNoSuggestions" />
 
             <Switch
+                android:id="@+id/swArea"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:minHeight="48dp"
+                android:text="Ignore listings outside my radius (Facebook sometimes adds far-away ones)"
+                android:textColor="@color/text"
+                android:textSize="15sp" />
+
+            <Switch
                 android:id="@+id/swDrops"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

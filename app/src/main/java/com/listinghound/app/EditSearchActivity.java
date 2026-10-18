@@ -13,7 +13,7 @@ public class EditSearchActivity extends Activity {
 
     private EditText etQuery, etName, etLocation, etRadius, etMin, etMax, etInclude, etExclude;
     private Search original;
-    private Switch swDrops, swUpdates;
+    private Switch swDrops, swUpdates, swArea;
 
     @Override
     protected void onCreate(Bundle b) {
@@ -30,11 +30,13 @@ public class EditSearchActivity extends Activity {
         etExclude = findViewById(R.id.etExclude);
         swDrops = findViewById(R.id.swDrops);
         swUpdates = findViewById(R.id.swUpdates);
+        swArea = findViewById(R.id.swArea);
 
         String id = getIntent().getStringExtra("id");
         original = id == null ? null : Store.search(this, id);
         swDrops.setChecked(original == null || original.alertDrops);
         swUpdates.setChecked(original == null || original.alertUpdates);
+        swArea.setChecked(original == null || original.strictArea);
 
         ((TextView) findViewById(R.id.tvHeading)).setText(original == null ? "New search" : "Edit search");
         findViewById(R.id.btnDelete).setVisibility(original == null ? View.GONE : View.VISIBLE);
@@ -71,6 +73,7 @@ public class EditSearchActivity extends Activity {
         s.exclude = etExclude.getText().toString().trim();
         s.alertDrops = swDrops.isChecked();
         s.alertUpdates = swUpdates.isChecked();
+        s.strictArea = swArea.isChecked();
         return s;
     }
 
@@ -120,15 +123,24 @@ public class EditSearchActivity extends Activity {
         ProgressDialog pd = ProgressDialog.show(this, null, "Checking Facebook…", true, false);
         new Thread(() -> {
             Fetcher.Result r = Fetcher.fetch(s);
+            boolean checkArea = s.strictArea && s.radiusKm > 0 && !s.location.trim().isEmpty();
+            double[] centre = checkArea ? Geo.centre(getApplicationContext(), s) : null;
+            if (centre != null) {
+                for (Listing l : r.listings) {
+                    double[] at = Geo.of(getApplicationContext(), l);
+                    if (at != null) l.km = Geo.km(centre, at);
+                }
+            }
+            final boolean areaUnknown = checkArea && centre == null;
             runOnUiThread(() -> {
                 if (isFinishing()) return;
                 pd.dismiss();
-                showPreview(s, r);
+                showPreview(s, r, areaUnknown);
             });
         }).start();
     }
 
-    private void showPreview(Search s, Fetcher.Result r) {
+    private void showPreview(Search s, Fetcher.Result r, boolean areaUnknown) {
         StringBuilder m = new StringBuilder();
         String title;
         if (r.error != null) {
@@ -141,22 +153,29 @@ public class EditSearchActivity extends Activity {
             title = "No listings found";
             m.append("Facebook returned a page but no listings could be read. Try a broader search, check the location, or log in.");
         } else {
-            int match = 0;
+            int match = 0, far = 0;
             StringBuilder lines = new StringBuilder();
             for (Listing l : r.listings) {
                 if (!s.matches(l)) continue;
+                if (l.km >= 0 && l.km > s.radiusKm * 1.15 + 3) {
+                    far++;
+                    continue;
+                }
                 match++;
                 if (match <= 12) {
                     lines.append("• ")
                             .append(l.priceOrBlank().isEmpty() ? "" : l.price + " — ")
                             .append(l.title)
-                            .append(l.city.isEmpty() ? "" : " (" + l.city + ")")
+                            .append(l.city.isEmpty() ? "" : " (" + l.city
+                                    + (l.km >= 0 ? ", " + Math.round(l.km) + " km" : "") + ")")
                             .append('\n');
                 }
             }
             title = match + " of " + r.listings.size() + " listings match";
             m.append(lines);
             if (match > 12) m.append("…and ").append(match - 12).append(" more\n");
+            if (far > 0) m.append("\n").append(far).append(" more were outside your radius and will be ignored.\n");
+            if (areaUnknown) m.append("\nCouldn't find “").append(s.location).append("” on the map, so distances can't be checked. Try the town's full name.\n");
             if (match == 0) m.append("Your title filters rule them all out — loosen “must contain” or “skip” words.");
             else m.append("\nThese are already listed, so they won't alert. You'll be told about new ones and price drops.");
         }

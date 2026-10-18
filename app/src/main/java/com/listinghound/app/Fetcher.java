@@ -215,7 +215,10 @@ public final class Fetcher {
         JSONObject loc = j.optJSONObject("location");
         if (loc != null) {
             JSONObject rg = loc.optJSONObject("reverse_geocode");
-            if (rg != null) l.city = rg.optString("city", "");
+            if (rg != null) {
+                l.city = rg.optString("city", "");
+                l.state = rg.optString("state", "");
+            }
         }
         long ct = j.optLong("creation_time", 0);
         if (ct > 1_000_000_000L) l.listedAt = ct * 1000L;

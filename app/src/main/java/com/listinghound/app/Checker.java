@@ -17,6 +17,7 @@ public final class Checker {
         public int searched;
         public int failed;
         public int ok;
+        public int outOfArea;
         public boolean loginNeeded;
         public String lastError;
         public String text = "";
@@ -48,11 +49,20 @@ public final class Checker {
 
             boolean baseline = !Store.hasBaseline(c, s.id);
             long prevOk = Store.lastOk(c, s.id);
+            boolean checkArea = s.strictArea && s.radiusKm > 0 && !s.location.trim().isEmpty();
+            double[] centre = checkArea ? Geo.centre(c, s) : null;
             LinkedHashMap<String, Store.Seen> seen = Store.seen(c, s.id);
             long now = System.currentTimeMillis();
             for (Listing l : r.listings) {
                 Store.Seen prev = seen.remove(l.id); // re-added below, so recent ones stay at the end
-                if (!baseline && s.matches(l)) {
+                if (!baseline && s.matches(l) && centre != null) {
+                    double[] at = Geo.of(c, l);
+                    if (at != null) l.km = Geo.km(centre, at);
+                }
+                // Town centres are approximate, so allow a little slack beyond the radius
+                boolean inArea = l.km < 0 || centre == null || l.km <= s.radiusKm * 1.15 + 3;
+                if (!inArea && !baseline && prev == null && s.matches(l)) sum.outOfArea++;
+                if (!baseline && s.matches(l) && inArea) {
                     if (prev == null) {
                         l.kind = "new";
                         l.prevCheckAt = prevOk;
@@ -107,6 +117,7 @@ public final class Checker {
             sum.text = n + " new";
             if (d > 0) sum.text += ", " + d + " price drop" + (d == 1 ? "" : "s");
             if (u > 0) sum.text += ", " + u + " updated";
+            if (sum.outOfArea > 0) sum.text += " · " + sum.outOfArea + " outside your radius ignored";
             if (sum.failed > 0) sum.text += " · " + sum.failed + " search" + (sum.failed == 1 ? "" : "es") + " failed";
         }
         return sum;
