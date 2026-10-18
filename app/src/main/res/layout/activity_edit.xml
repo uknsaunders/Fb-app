@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="32dp">
+
+        <TextView
+            android:id="@+id/tvHeading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="@color/text"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <LinearLayout style="@style/Card">
+
+            <TextView style="@style/Label" android:layout_marginTop="0dp" android:text="What to search for" />
+            <EditText
+                android:id="@+id/etQuery"
+                style="@style/Field"
+                android:hint="e.g. Concept2 rower"
+                android:inputType="text" />
+
+            <TextView style="@style/Label" android:text="Name (optional)" />
+            <EditText
+                android:id="@+id/etName"
+                style="@style/Field"
+                android:hint="Shown in alerts"
+                android:inputType="textCapSentences" />
+
+            <TextView style="@style/Label" android:text="Location (optional)" />
+            <EditText
+                android:id="@+id/etLocation"
+                style="@style/Field"
+                android:hint="e.g. leeds — blank uses your Facebook location"
+                android:inputType="textNoSuggestions" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="The city name as it appears in a Marketplace web address, e.g. facebook.com/marketplace/leeds"
+                android:textColor="@color/subtext"
+                android:textSize="12sp" />
+
+            <TextView style="@style/Label" android:text="Radius in km (optional)" />
+            <EditText
+                android:id="@+id/etRadius"
+                style="@style/Field"
+                android:hint="e.g. 40"
+                android:inputType="number" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView style="@style/Label" android:text="Min price £" />
+                    <EditText
+                        android:id="@+id/etMin"
+                        style="@style/Field"
+                        android:hint="Any"
+                        android:inputType="number" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView style="@style/Label" android:text="Max price £" />
+                    <EditText
+                        android:id="@+id/etMax"
+                        style="@style/Field"
+                        android:hint="Any"
+                        android:inputType="number" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView style="@style/Label" android:text="Title must contain all of (comma-separated)" />
+            <EditText
+                android:id="@+id/etInclude"
+                style="@style/Field"
+                android:hint="e.g. pm5"
+                android:inputType="textNoSuggestions" />
+
+            <TextView style="@style/Label" android:text="Skip if title contains any of" />
+            <EditText
+                android:id="@+id/etExclude"
+                style="@style/Field"
+                android:hint="e.g. wanted, broken, parts"
+                android:inputType="textNoSuggestions" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnSave"
+            style="@style/PrimaryButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPreview"
+                style="@style/TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Test this search" />
+
+            <Button
+                android:id="@+id/btnDelete"
+                style="@style/TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Delete" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>
