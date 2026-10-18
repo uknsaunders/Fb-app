@@ -16,6 +16,7 @@ public final class Checker {
         public final List<Listing> fresh = new ArrayList<>();
         public int searched;
         public int failed;
+        public int ok;
         public boolean loginNeeded;
         public String lastError;
         public String text = "";
@@ -46,6 +47,7 @@ public final class Checker {
             }
 
             boolean baseline = !Store.hasBaseline(c, s.id);
+            long prevOk = Store.lastOk(c, s.id);
             LinkedHashMap<String, Store.Seen> seen = Store.seen(c, s.id);
             long now = System.currentTimeMillis();
             for (Listing l : r.listings) {
@@ -53,6 +55,7 @@ public final class Checker {
                 if (!baseline && s.matches(l)) {
                     if (prev == null) {
                         l.kind = "new";
+                        l.prevCheckAt = prevOk;
                         sum.fresh.add(l);
                     } else if (s.alertDrops && prev.amount > 0 && l.amount >= 0 && l.amount < prev.amount - 0.005) {
                         l.kind = "drop";
@@ -70,6 +73,8 @@ public final class Checker {
                 seen.put(l.id, new Store.Seen(l.amount, l.title));
             }
             Store.saveSeen(c, s.id, seen);
+            Store.setLastOk(c, s.id, now);
+            sum.ok++;
         }
 
         // When were the new ones posted? (shows how quickly they were spotted)
@@ -84,6 +89,7 @@ public final class Checker {
             l.thumb = Fetcher.thumbnail(l.imageUrl);
         }
         if (!sum.fresh.isEmpty()) Store.addFinds(c, sum.fresh);
+        if (sum.ok > 0) Store.logCheck(c, System.currentTimeMillis());
 
         if (sum.searched == 0) {
             sum.text = "No searches switched on";

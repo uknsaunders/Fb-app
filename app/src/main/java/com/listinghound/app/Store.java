@@ -170,6 +170,31 @@ public final class Store {
         p(c).edit().remove("seen_" + searchId).apply();
     }
 
+    // ---- Check timing (for responsiveness stats) ----
+
+    /** Last time this search was checked successfully. */
+    public static long lastOk(Context c, String searchId) { return p(c).getLong("ok_" + searchId, 0); }
+    public static void setLastOk(Context c, String searchId, long t) { p(c).edit().putLong("ok_" + searchId, t).apply(); }
+
+    /** Times of recent successful checks, oldest first. */
+    public static synchronized List<Long> checkTimes(Context c) {
+        List<Long> out = new ArrayList<>();
+        try {
+            JSONArray a = new JSONArray(p(c).getString("checkLog", "[]"));
+            for (int i = 0; i < a.length(); i++) out.add(a.getLong(i));
+        } catch (JSONException ignored) {
+        }
+        return out;
+    }
+
+    public static synchronized void logCheck(Context c, long t) {
+        List<Long> all = checkTimes(c);
+        all.add(t);
+        JSONArray a = new JSONArray();
+        for (int i = Math.max(0, all.size() - 400); i < all.size(); i++) a.put(all.get(i));
+        p(c).edit().putString("checkLog", a.toString()).apply();
+    }
+
     // ---- Recent finds ----
 
     public static synchronized List<Listing> finds(Context c) {

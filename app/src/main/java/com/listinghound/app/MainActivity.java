@@ -350,8 +350,21 @@ public class MainActivity extends Activity {
 
     private void renderFinds() {
         llFinds.removeAllViews();
+        String stats = Timing.summary(this);
+        if (!stats.isEmpty()) {
+            TextView t = new TextView(this);
+            t.setText(stats);
+            t.setTextColor(getColor(R.color.text));
+            t.setTextSize(14);
+            t.setLineSpacing(0, 1.15f);
+            int p = (int) (12 * getResources().getDisplayMetrics().density);
+            t.setPadding(0, p, 0, p);
+            llFinds.addView(t);
+            addDivider(llFinds);
+        }
         List<Listing> finds = Store.finds(this);
         if (finds.isEmpty()) {
+            if (!stats.isEmpty()) return;
             addEmpty(llFinds, "New listings and price drops will appear here. The first check of a search only records what's already listed, so you're alerted to new ones after that.");
             return;
         }
@@ -370,19 +383,17 @@ public class MainActivity extends Activity {
     private String findDetail(Listing l) {
         StringBuilder b = new StringBuilder(l.searchName);
         if (!l.city.isEmpty()) b.append(" · ").append(l.city);
-        b.append("\nSpotted ").append(Notif.time(this, l.foundAt));
-        if ("new".equals(l.kind)) {
-            if (l.listedAt > 0) {
-                long mins = Math.max(0, (l.foundAt - l.listedAt) / 60_000L);
-                b.append(" · listed ").append(Notif.time(this, l.listedAt))
-                        .append(" (").append(mins < 1 ? "under a minute" : mins + " min").append(" before)");
-            } else if (l.listedAt == 0) {
-                b.append(" · looking up when it was listed…");
-            } else {
-                b.append(" · listing time not available");
+        String timing = Timing.explain(this, l);
+        if (!timing.isEmpty()) {
+            b.append('\n').append(timing);
+        } else {
+            b.append("\nSpotted ").append(Notif.time(this, l.foundAt));
+            if ("new".equals(l.kind)) {
+                if (l.listedAt == 0) b.append(" · looking up when it was listed…");
+                else if (l.listedAt < 0) b.append(" · listing time not available");
+            } else if ("updated".equals(l.kind) && !l.oldTitle.isEmpty()) {
+                b.append(" · was “").append(l.oldTitle).append("”");
             }
-        } else if ("updated".equals(l.kind) && !l.oldTitle.isEmpty()) {
-            b.append(" · was “").append(l.oldTitle).append("”");
         }
         if (!DateUtils.isToday(l.foundAt)) {
             b.append(" · ").append(DateUtils.formatDateTime(this, l.foundAt, DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_ABBREV_MONTH));

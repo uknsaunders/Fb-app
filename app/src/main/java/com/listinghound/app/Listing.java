@@ -24,6 +24,8 @@ public class Listing {
     public String oldTitle = "";
     /** When the seller posted it (ms); 0 = not looked up yet, -1 = unknown. */
     public long listedAt = 0;
+    /** The search's previous successful check before this one spotted it; 0 = unknown. */
+    public long prevCheckAt = 0;
 
     /** Thumbnail for the notification; never stored. */
     public transient Bitmap thumb;
@@ -69,6 +71,7 @@ public class Listing {
             j.put("oldPrice", oldPrice);
             j.put("oldTitle", oldTitle);
             j.put("listedAt", listedAt);
+            j.put("prevCheckAt", prevCheckAt);
         } catch (JSONException ignored) {
         }
         return j;
@@ -88,6 +91,7 @@ public class Listing {
         l.oldPrice = j.optString("oldPrice", "");
         l.oldTitle = j.optString("oldTitle", "");
         l.listedAt = j.optLong("listedAt", 0);
+        l.prevCheckAt = j.optLong("prevCheckAt", 0);
         return l;
     }
 }
