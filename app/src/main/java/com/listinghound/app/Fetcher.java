@@ -217,6 +217,8 @@ public final class Fetcher {
             JSONObject rg = loc.optJSONObject("reverse_geocode");
             if (rg != null) l.city = rg.optString("city", "");
         }
+        long ct = j.optLong("creation_time", 0);
+        if (ct > 1_000_000_000L) l.listedAt = ct * 1000L;
         JSONObject photo = j.optJSONObject("primary_listing_photo");
         if (photo != null) {
             JSONObject img = photo.optJSONObject("image");
@@ -258,6 +260,42 @@ public final class Fetcher {
             return v instanceof String ? (String) v : s;
         } catch (Exception e) {
             return s;
+        }
+    }
+
+    private static final Pattern CREATED = Pattern.compile("\"creation_time\":(\\d{10})");
+
+    /** When a listing was posted, read from its own page. Returns ms, or -1 if it can't be found. */
+    public static long listedAt(String id) {
+        Request.Builder rb = new Request.Builder()
+                .url(FB + "/marketplace/item/" + id + "/")
+                .header("User-Agent", UA)
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                .header("Accept-Language", "en-GB,en;q=0.9");
+        try {
+            String cookie = CookieManager.getInstance().getCookie(FB);
+            if (cookie != null && !cookie.isEmpty()) rb.header("Cookie", cookie);
+        } catch (Throwable ignored) {
+        }
+        try (Response resp = CLIENT.newCall(rb.build()).execute()) {
+            ResponseBody body = resp.body();
+            if (!resp.isSuccessful() || body == null) return -1;
+            String html = read(body.byteStream());
+            // Prefer the timestamp closest after this listing's own ID
+            int at = html.indexOf("\"id\":\"" + id + "\"");
+            Matcher m = CREATED.matcher(html);
+            long best = -1;
+            int bestDist = Integer.MAX_VALUE;
+            while (m.find()) {
+                int dist = at < 0 ? m.start() : Math.abs(m.start() - at);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    best = Long.parseLong(m.group(1)) * 1000L;
+                }
+            }
+            return best;
+        } catch (Exception e) {
+            return -1;
         }
     }
 

@@ -39,6 +39,7 @@ public class MainActivity extends Activity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean binding;
     private long shownCheck = -1;
+    private boolean backfilling;
 
     private final Runnable ticker = new Runnable() {
         @Override
@@ -48,6 +49,7 @@ public class MainActivity extends Activity {
             if (last != shownCheck) {
                 shownCheck = last;
                 renderFinds();
+                backfillListingTimes();
             }
             handler.postDelayed(this, 3000);
         }
@@ -105,6 +107,7 @@ public class MainActivity extends Activity {
         renderFinds();
         refreshLogin();
         refreshBattery();
+        backfillListingTimes();
         handler.post(ticker);
     }
 
@@ -332,23 +335,61 @@ public class MainActivity extends Activity {
         llFinds.removeAllViews();
         List<Listing> finds = Store.finds(this);
         if (finds.isEmpty()) {
-            addEmpty(llFinds, "New listings will appear here. The first check of a search only records what's already listed, so you're alerted to new ones after that.");
+            addEmpty(llFinds, "New listings and price drops will appear here. The first check of a search only records what's already listed, so you're alerted to new ones after that.");
             return;
         }
         LayoutInflater inf = getLayoutInflater();
         for (int i = 0; i < Math.min(50, finds.size()); i++) {
             Listing l = finds.get(i);
             View row = inf.inflate(R.layout.item_row, llFinds, false);
-            String title = (l.priceOrBlank().isEmpty() ? "" : l.price + " · ") + l.title;
-            ((TextView) row.findViewById(R.id.title)).setText(title);
-            String when = DateUtils.getRelativeTimeSpanString(l.foundAt, System.currentTimeMillis(),
-                    DateUtils.MINUTE_IN_MILLIS).toString();
-            ((TextView) row.findViewById(R.id.sub)).setText(
-                    l.searchName + (l.city.isEmpty() ? "" : " · " + l.city) + " · " + when);
+            ((TextView) row.findViewById(R.id.title)).setText(l.headline());
+            ((TextView) row.findViewById(R.id.sub)).setText(findDetail(l));
             row.setOnClickListener(v -> open(l.url()));
             if (i > 0) addDivider(llFinds);
             llFinds.addView(row);
         }
+    }
+
+    private String findDetail(Listing l) {
+        StringBuilder b = new StringBuilder(l.searchName);
+        if (!l.city.isEmpty()) b.append(" · ").append(l.city);
+        b.append("\nSpotted ").append(Notif.time(this, l.foundAt));
+        if ("new".equals(l.kind)) {
+            if (l.listedAt > 0) {
+                long mins = Math.max(0, (l.foundAt - l.listedAt) / 60_000L);
+                b.append(" · listed ").append(Notif.time(this, l.listedAt))
+                        .append(" (").append(mins < 1 ? "under a minute" : mins + " min").append(" before)");
+            } else if (l.listedAt == 0) {
+                b.append(" · looking up when it was listed…");
+            } else {
+                b.append(" · listing time not available");
+            }
+        } else if ("updated".equals(l.kind) && !l.oldTitle.isEmpty()) {
+            b.append(" · was “").append(l.oldTitle).append("”");
+        }
+        if (!DateUtils.isToday(l.foundAt)) {
+            b.append(" · ").append(DateUtils.formatDateTime(this, l.foundAt, DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_ABBREV_MONTH));
+        }
+        return b.toString();
+    }
+
+    /** Finds saved before listing times were recorded, or whose lookup hasn't run yet. */
+    private void backfillListingTimes() {
+        if (backfilling) return;
+        List<Listing> todo = new java.util.ArrayList<>();
+        for (Listing l : Store.finds(this)) {
+            if ("new".equals(l.kind) && l.listedAt == 0 && todo.size() < 5) todo.add(l);
+        }
+        if (todo.isEmpty()) return;
+        backfilling = true;
+        final android.content.Context app = getApplicationContext();
+        new Thread(() -> {
+            for (Listing l : todo) Store.setListedAt(app, l.key(), Fetcher.listedAt(l.id));
+            handler.post(() -> {
+                backfilling = false;
+                renderFinds();
+            });
+        }).start();
     }
 
     private void open(String url) {

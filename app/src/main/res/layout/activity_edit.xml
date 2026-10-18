@@ -107,6 +107,25 @@
                 style="@style/Field"
                 android:hint="e.g. wanted, broken, parts"
                 android:inputType="textNoSuggestions" />
+
+            <Switch
+                android:id="@+id/swDrops"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:minHeight="48dp"
+                android:text="Alert when a price is lowered"
+                android:textColor="@color/text"
+                android:textSize="15sp" />
+
+            <Switch
+                android:id="@+id/swUpdates"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="Alert when a listing's title is changed"
+                android:textColor="@color/text"
+                android:textSize="15sp" />
         </LinearLayout>
 
         <Button

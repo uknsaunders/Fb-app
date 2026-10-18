@@ -5,11 +5,11 @@ import android.content.SharedPreferences;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
 
 /** Everything the app keeps, in one SharedPreferences file. */
 public final class Store {
@@ -110,22 +110,60 @@ public final class Store {
         return p(c).contains("seen_" + searchId);
     }
 
-    public static synchronized Set<String> seen(Context c, String searchId) {
-        Set<String> out = new LinkedHashSet<>();
+    /** What a listing looked like the last time a search saw it. */
+    public static class Seen {
+        public double amount;
+        public String title;
+
+        public Seen(double amount, String title) {
+            this.amount = amount;
+            this.title = title == null ? "" : title;
+        }
+    }
+
+    public static synchronized LinkedHashMap<String, Seen> seen(Context c, String searchId) {
+        LinkedHashMap<String, Seen> out = new LinkedHashMap<>();
+        String raw = p(c).getString("seen_" + searchId, "{}");
         try {
-            JSONArray a = new JSONArray(p(c).getString("seen_" + searchId, "[]"));
-            for (int i = 0; i < a.length(); i++) out.add(a.getString(i));
+            if (raw.trim().startsWith("[")) {
+                // Older versions kept only the IDs
+                JSONArray a = new JSONArray(raw);
+                for (int i = 0; i < a.length(); i++) out.put(a.getString(i), new Seen(-1, ""));
+            } else {
+                JSONObject o = new JSONObject(raw);
+                JSONArray ids = o.optJSONArray("order");
+                if (ids != null) {
+                    for (int i = 0; i < ids.length(); i++) {
+                        String id = ids.getString(i);
+                        JSONArray v = o.optJSONArray(id);
+                        out.put(id, v == null ? new Seen(-1, "") : new Seen(v.optDouble(0, -1), v.optString(1, "")));
+                    }
+                }
+            }
         } catch (JSONException ignored) {
         }
         return out;
     }
 
-    public static synchronized void saveSeen(Context c, String searchId, Set<String> ids) {
-        List<String> list = new ArrayList<>(ids);
-        int from = Math.max(0, list.size() - MAX_SEEN);
-        JSONArray a = new JSONArray();
-        for (int i = from; i < list.size(); i++) a.put(list.get(i));
-        p(c).edit().putString("seen_" + searchId, a.toString()).apply();
+    public static synchronized void saveSeen(Context c, String searchId, LinkedHashMap<String, Seen> map) {
+        List<String> ids = new ArrayList<>(map.keySet());
+        int from = Math.max(0, ids.size() - MAX_SEEN);
+        JSONObject o = new JSONObject();
+        JSONArray order = new JSONArray();
+        try {
+            for (int i = from; i < ids.size(); i++) {
+                String id = ids.get(i);
+                Seen v = map.get(id);
+                order.put(id);
+                JSONArray arr = new JSONArray();
+                arr.put(v.amount);
+                arr.put(v.title);
+                o.put(id, arr);
+            }
+            o.put("order", order);
+        } catch (JSONException ignored) {
+        }
+        p(c).edit().putString("seen_" + searchId, o.toString()).apply();
     }
 
     public static synchronized void clearSeen(Context c, String searchId) {
@@ -150,6 +188,17 @@ public final class Store {
         all.addAll(finds(c));
         JSONArray a = new JSONArray();
         for (int i = 0; i < Math.min(MAX_FINDS, all.size()); i++) a.put(all.get(i).toJson());
+        p(c).edit().putString("finds", a.toString()).apply();
+    }
+
+    /** Records when a found listing was posted (-1 = couldn't tell). */
+    public static synchronized void setListedAt(Context c, String findKey, long listedAt) {
+        List<Listing> all = finds(c);
+        JSONArray a = new JSONArray();
+        for (Listing l : all) {
+            if (l.key().equals(findKey)) l.listedAt = listedAt;
+            a.put(l.toJson());
+        }
         p(c).edit().putString("finds", a.toString()).apply();
     }
 

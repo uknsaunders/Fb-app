@@ -18,12 +18,36 @@ public class Listing {
     // Only for recent finds
     public String searchName = "";
     public long foundAt = 0;
+    /** "new", "drop" (price lowered) or "updated" (title changed). */
+    public String kind = "new";
+    public String oldPrice = "";
+    public String oldTitle = "";
+    /** When the seller posted it (ms); 0 = not looked up yet, -1 = unknown. */
+    public long listedAt = 0;
 
     /** Thumbnail for the notification; never stored. */
     public transient Bitmap thumb;
 
     public String url() {
         return "https://www.facebook.com/marketplace/item/" + id + "/";
+    }
+
+    /** Identifies one alert (the same listing can alert again for a price drop). */
+    public String key() {
+        return id + ":" + kind + ":" + foundAt;
+    }
+
+    /** Main line for notifications and the finds list. */
+    public String headline() {
+        String p = priceOrBlank();
+        switch (kind) {
+            case "drop":
+                return "Price drop " + (oldPrice.isEmpty() ? "" : oldPrice + " → ") + p + " · " + title;
+            case "updated":
+                return "Updated · " + (p.isEmpty() ? "" : p + " · ") + title;
+            default:
+                return (p.isEmpty() ? "" : p + " · ") + title;
+        }
     }
 
     public String priceOrBlank() {
@@ -41,6 +65,10 @@ public class Listing {
             j.put("image", imageUrl);
             j.put("search", searchName);
             j.put("foundAt", foundAt);
+            j.put("kind", kind);
+            j.put("oldPrice", oldPrice);
+            j.put("oldTitle", oldTitle);
+            j.put("listedAt", listedAt);
         } catch (JSONException ignored) {
         }
         return j;
@@ -56,6 +84,10 @@ public class Listing {
         l.imageUrl = j.optString("image", "");
         l.searchName = j.optString("search", "");
         l.foundAt = j.optLong("foundAt", 0);
+        l.kind = j.optString("kind", "new");
+        l.oldPrice = j.optString("oldPrice", "");
+        l.oldTitle = j.optString("oldTitle", "");
+        l.listedAt = j.optLong("listedAt", 0);
         return l;
     }
 }

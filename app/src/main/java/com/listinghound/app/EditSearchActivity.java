@@ -6,12 +6,14 @@ import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.TextView;
 
 public class EditSearchActivity extends Activity {
 
     private EditText etQuery, etName, etLocation, etRadius, etMin, etMax, etInclude, etExclude;
     private Search original;
+    private Switch swDrops, swUpdates;
 
     @Override
     protected void onCreate(Bundle b) {
@@ -26,9 +28,13 @@ public class EditSearchActivity extends Activity {
         etMax = findViewById(R.id.etMax);
         etInclude = findViewById(R.id.etInclude);
         etExclude = findViewById(R.id.etExclude);
+        swDrops = findViewById(R.id.swDrops);
+        swUpdates = findViewById(R.id.swUpdates);
 
         String id = getIntent().getStringExtra("id");
         original = id == null ? null : Store.search(this, id);
+        swDrops.setChecked(original == null || original.alertDrops);
+        swUpdates.setChecked(original == null || original.alertUpdates);
 
         ((TextView) findViewById(R.id.tvHeading)).setText(original == null ? "New search" : "Edit search");
         findViewById(R.id.btnDelete).setVisibility(original == null ? View.GONE : View.VISIBLE);
@@ -63,6 +69,8 @@ public class EditSearchActivity extends Activity {
         s.maxPrice = num(etMax);
         s.include = etInclude.getText().toString().trim();
         s.exclude = etExclude.getText().toString().trim();
+        s.alertDrops = swDrops.isChecked();
+        s.alertUpdates = swUpdates.isChecked();
         return s;
     }
 
@@ -150,7 +158,7 @@ public class EditSearchActivity extends Activity {
             m.append(lines);
             if (match > 12) m.append("…and ").append(match - 12).append(" more\n");
             if (match == 0) m.append("Your title filters rule them all out — loosen “must contain” or “skip” words.");
-            else m.append("\nThese are already listed, so they won't alert. You'll be told about new ones.");
+            else m.append("\nThese are already listed, so they won't alert. You'll be told about new ones and price drops.");
         }
         new AlertDialog.Builder(this)
                 .setTitle(title)

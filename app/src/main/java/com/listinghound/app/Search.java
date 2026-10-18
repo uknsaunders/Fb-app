@@ -23,6 +23,8 @@ public class Search {
     /** Comma-separated words; any of them in the title rejects the listing. */
     public String exclude = "";
     public boolean enabled = true;
+    public boolean alertDrops = true;
+    public boolean alertUpdates = true;
 
     public String displayName() {
         return name.trim().isEmpty() ? query.trim() : name.trim();
@@ -78,6 +80,8 @@ public class Search {
             j.put("include", include);
             j.put("exclude", exclude);
             j.put("enabled", enabled);
+            j.put("alertDrops", alertDrops);
+            j.put("alertUpdates", alertUpdates);
         } catch (JSONException ignored) {
         }
         return j;
@@ -95,6 +99,8 @@ public class Search {
         s.include = j.optString("include", "");
         s.exclude = j.optString("exclude", "");
         s.enabled = j.optBoolean("enabled", true);
+        s.alertDrops = j.optBoolean("alertDrops", true);
+        s.alertUpdates = j.optBoolean("alertUpdates", true);
         return s;
     }
 

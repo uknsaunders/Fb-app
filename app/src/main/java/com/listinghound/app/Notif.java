@@ -99,7 +99,7 @@ public final class Notif {
             if (fresh.size() > 7) inbox.setSummaryText("+" + (fresh.size() - 7) + " more in the app");
             nm.notify(ID_SUMMARY, new Notification.Builder(c, CH_FINDS)
                     .setSmallIcon(R.drawable.ic_stat)
-                    .setContentTitle(fresh.size() + " new listings")
+                    .setContentTitle(fresh.size() + " new or changed listings")
                     .setContentText(line(fresh.get(0)))
                     .setStyle(inbox)
                     .setAutoCancel(true)
@@ -110,10 +110,12 @@ public final class Notif {
 
         for (Listing l : fresh) {
             Intent view = new Intent(Intent.ACTION_VIEW, Uri.parse(l.url()));
-            PendingIntent pi = PendingIntent.getActivity(c, l.id.hashCode(), view,
+            PendingIntent pi = PendingIntent.getActivity(c, l.key().hashCode(), view,
                     PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-            String title = (l.priceOrBlank().isEmpty() ? "" : l.price + " · ") + l.title;
+            String title = l.headline();
             String text = l.searchName + (l.city.isEmpty() ? "" : " · " + l.city);
+            if ("new".equals(l.kind) && l.listedAt > 0) text += " · listed " + time(c, l.listedAt);
+            if ("updated".equals(l.kind) && !l.oldTitle.isEmpty()) text += " · was “" + l.oldTitle + "”";
             Notification.Builder b = new Notification.Builder(c, CH_FINDS)
                     .setSmallIcon(R.drawable.ic_stat)
                     .setContentTitle(title)
@@ -127,7 +129,7 @@ public final class Notif {
                 b.setLargeIcon(l.thumb);
                 b.setStyle(new Notification.BigPictureStyle().bigPicture(l.thumb).setSummaryText(text));
             }
-            nm.notify(l.id.hashCode(), b.build());
+            nm.notify(l.key().hashCode(), b.build());
         }
         if (fresh.size() > 1) {
             nm.notify(ID_SUMMARY, new Notification.Builder(c, CH_FINDS)
@@ -142,7 +144,7 @@ public final class Notif {
     }
 
     private static String line(Listing l) {
-        return (l.priceOrBlank().isEmpty() ? "" : l.price + " · ") + l.title;
+        return l.headline();
     }
 
     static void problem(Context c, String title, String text, boolean openLogin) {

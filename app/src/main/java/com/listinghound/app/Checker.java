@@ -5,7 +5,8 @@ import android.content.Context;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 
 /** One pass over every enabled search. Runs on a background thread. */
 public final class Checker {
@@ -45,18 +46,36 @@ public final class Checker {
             }
 
             boolean baseline = !Store.hasBaseline(c, s.id);
-            Set<String> seen = Store.seen(c, s.id);
+            LinkedHashMap<String, Store.Seen> seen = Store.seen(c, s.id);
+            long now = System.currentTimeMillis();
             for (Listing l : r.listings) {
-                if (!seen.contains(l.id)) {
-                    if (!baseline && s.matches(l)) {
-                        l.searchName = s.displayName();
-                        l.foundAt = System.currentTimeMillis();
+                Store.Seen prev = seen.remove(l.id); // re-added below, so recent ones stay at the end
+                if (!baseline && s.matches(l)) {
+                    if (prev == null) {
+                        l.kind = "new";
+                        sum.fresh.add(l);
+                    } else if (s.alertDrops && prev.amount > 0 && l.amount >= 0 && l.amount < prev.amount - 0.005) {
+                        l.kind = "drop";
+                        l.oldPrice = formatLike(l.price, prev.amount);
+                        sum.fresh.add(l);
+                    } else if (s.alertUpdates && !prev.title.isEmpty() && !l.title.isEmpty()
+                            && !prev.title.equalsIgnoreCase(l.title)) {
+                        l.kind = "updated";
+                        l.oldTitle = prev.title;
                         sum.fresh.add(l);
                     }
-                    seen.add(l.id);
                 }
+                l.searchName = s.displayName();
+                l.foundAt = now;
+                seen.put(l.id, new Store.Seen(l.amount, l.title));
             }
             Store.saveSeen(c, s.id, seen);
+        }
+
+        // When were the new ones posted? (shows how quickly they were spotted)
+        for (int i = 0; i < Math.min(5, sum.fresh.size()); i++) {
+            Listing l = sum.fresh.get(i);
+            if ("new".equals(l.kind) && l.listedAt == 0) l.listedAt = Fetcher.listedAt(l.id);
         }
 
         // Thumbnails for the first few alerts only
@@ -73,7 +92,15 @@ public final class Checker {
         } else if (sum.failed == sum.searched) {
             sum.text = "Couldn't reach Facebook" + (sum.lastError != null ? " (" + sum.lastError + ")" : "");
         } else {
-            sum.text = sum.fresh.size() + " new";
+            int n = 0, d = 0, u = 0;
+            for (Listing l : sum.fresh) {
+                if ("drop".equals(l.kind)) d++;
+                else if ("updated".equals(l.kind)) u++;
+                else n++;
+            }
+            sum.text = n + " new";
+            if (d > 0) sum.text += ", " + d + " price drop" + (d == 1 ? "" : "s");
+            if (u > 0) sum.text += ", " + u + " updated";
             if (sum.failed > 0) sum.text += " · " + sum.failed + " search" + (sum.failed == 1 ? "" : "es") + " failed";
         }
         return sum;
@@ -85,5 +112,19 @@ public final class Checker {
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    /** Old price written in the same style as the new one, e.g. "£40". */
+    static String formatLike(String newPrice, double amount) {
+        String num = amount == Math.rint(amount)
+                ? String.valueOf((long) amount)
+                : String.format(Locale.UK, "%.2f", amount);
+        String prefix = "";
+        if (newPrice != null) {
+            int i = 0;
+            while (i < newPrice.length() && !Character.isDigit(newPrice.charAt(i))) i++;
+            prefix = newPrice.substring(0, i);
+        }
+        return prefix + num;
     }
 }
