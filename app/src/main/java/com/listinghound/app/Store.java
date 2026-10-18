@@ -227,6 +227,18 @@ public final class Store {
         p(c).edit().putString("finds", a.toString()).apply();
     }
 
+    public static synchronized void saveFinds(Context c, List<Listing> list) {
+        JSONArray a = new JSONArray();
+        for (Listing l : list) a.put(l.toJson());
+        p(c).edit().putString("finds", a.toString()).apply();
+    }
+
+    public static synchronized void removeFind(Context c, String findKey) {
+        List<Listing> all = finds(c);
+        for (int i = all.size() - 1; i >= 0; i--) if (all.get(i).key().equals(findKey)) all.remove(i);
+        saveFinds(c, all);
+    }
+
     public static synchronized void clearFinds(Context c) {
         p(c).edit().remove("finds").apply();
     }

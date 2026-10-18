@@ -88,10 +88,15 @@ public class MainActivity extends Activity {
         findViewById(R.id.btnExact).setOnClickListener(v -> askExact());
         findViewById(R.id.btnAdd).setOnClickListener(v ->
                 startActivity(new Intent(this, EditSearchActivity.class)));
-        findViewById(R.id.btnClear).setOnClickListener(v -> {
-            Store.clearFinds(this);
-            renderFinds();
-        });
+        findViewById(R.id.btnClear).setOnClickListener(v -> new AlertDialog.Builder(this)
+                .setMessage("Clear all recent finds? Your searches aren't affected.")
+                .setPositiveButton("Clear", (d, w) -> {
+                    Store.clearFinds(this);
+                    renderFinds();
+                })
+                .setNegativeButton("Cancel", null)
+                .show());
+        findViewById(R.id.btnTidy).setOnClickListener(v -> tidyFinds());
 
         setupSpinners();
 
@@ -375,6 +380,18 @@ public class MainActivity extends Activity {
             ((TextView) row.findViewById(R.id.title)).setText(l.headline());
             ((TextView) row.findViewById(R.id.sub)).setText(findDetail(l));
             row.setOnClickListener(v -> open(l.url()));
+            row.setOnLongClickListener(v -> {
+                new AlertDialog.Builder(this)
+                        .setTitle("Remove from list?")
+                        .setMessage(l.headline())
+                        .setPositiveButton("Remove", (d, w) -> {
+                            Store.removeFind(this, l.key());
+                            renderFinds();
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+                return true;
+            });
             if (i > 0) addDivider(llFinds);
             llFinds.addView(row);
         }
@@ -416,6 +433,48 @@ public class MainActivity extends Activity {
             for (Listing l : todo) Store.setListedAt(app, l.key(), Fetcher.listedAt(l.id));
             handler.post(() -> {
                 backfilling = false;
+                renderFinds();
+            });
+        }).start();
+    }
+
+    /** Removes finds that are further away than their search's radius. */
+    private void tidyFinds() {
+        Toast.makeText(this, "Checking distances…", Toast.LENGTH_SHORT).show();
+        final android.content.Context app = getApplicationContext();
+        new Thread(() -> {
+            java.util.Map<String, Search> byName = new java.util.HashMap<>();
+            for (Search s : Store.searches(app)) byName.put(s.displayName(), s);
+            java.util.Map<String, double[]> centres = new java.util.HashMap<>();
+            List<Listing> keep = new java.util.ArrayList<>();
+            int removed = 0, unknown = 0;
+            for (Listing l : Store.finds(app)) {
+                Search s = byName.get(l.searchName);
+                if (s == null || s.radiusKm <= 0 || s.location.trim().isEmpty()) {
+                    keep.add(l);
+                    continue;
+                }
+                if (l.km < 0) {
+                    double[] c = centres.containsKey(s.id) ? centres.get(s.id) : Geo.centre(app, s);
+                    centres.put(s.id, c);
+                    double[] at = Geo.of(app, l);
+                    if (c != null && at != null) l.km = Geo.km(c, at);
+                }
+                if (l.km < 0) {
+                    unknown++;
+                    keep.add(l);
+                } else if (l.km > s.radiusKm * 1.15 + 3) {
+                    removed++;
+                } else {
+                    keep.add(l);
+                }
+            }
+            Store.saveFinds(app, keep);
+            final String msg = removed == 0 ? "Nothing outside your radius"
+                    : "Removed " + removed + " outside your radius";
+            final String extra = unknown > 0 ? " · " + unknown + " kept (no town given)" : "";
+            handler.post(() -> {
+                Toast.makeText(app, msg + extra, Toast.LENGTH_LONG).show();
                 renderFinds();
             });
         }).start();
