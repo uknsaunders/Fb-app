@@ -17,6 +17,7 @@ public final class Checker {
         /** The part of fresh that should notify (the rest is list-only). */
         public final List<Listing> alerts = new ArrayList<>();
         public int ignored;
+        public int repeats;
         public int searched;
         public int failed;
         public int ok;
@@ -91,6 +92,17 @@ public final class Checker {
             sum.ok++;
         }
 
+        // A listing already in your finds is never "new" again
+        java.util.Set<String> known = new java.util.HashSet<>();
+        for (Listing f : Store.finds(c)) known.add(f.id);
+        for (int i = sum.fresh.size() - 1; i >= 0; i--) {
+            Listing l = sum.fresh.get(i);
+            if ("new".equals(l.kind) && known.contains(l.id)) {
+                sum.fresh.remove(i);
+                sum.repeats++;
+            }
+        }
+
         // When were the new ones posted? Old ones being bumped back up are "renewed", not new.
         java.util.Map<String, Search> byId = new java.util.HashMap<>();
         for (Search s : list) byId.put(s.id, s);
@@ -148,6 +160,7 @@ public final class Checker {
             if (d > 0) sum.text += ", " + d + " price drop" + (d == 1 ? "" : "s");
             if (u > 0) sum.text += ", " + u + " updated";
             if (rn > 0) sum.text += ", " + rn + " renewed";
+            if (sum.repeats > 0) sum.text += " · " + sum.repeats + " already seen";
             if (sum.ignored > 0) sum.text += " · " + sum.ignored + " ignored by your settings";
             if (sum.outOfArea > 0) sum.text += " · " + sum.outOfArea + " outside your radius ignored";
             if (sum.failed > 0) sum.text += " · " + sum.failed + " search" + (sum.failed == 1 ? "" : "es") + " failed";

@@ -451,6 +451,7 @@ public class MainActivity extends Activity {
                 b.append(" · was “").append(l.oldTitle).append("”");
             }
         }
+        b.append("\nListing ").append(l.id.length() > 6 ? "…" + l.id.substring(l.id.length() - 6) : l.id);
         if (!DateUtils.isToday(l.foundAt)) {
             b.append(" · ").append(DateUtils.formatDateTime(this, l.foundAt, DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_ABBREV_MONTH));
         }
@@ -460,6 +461,20 @@ public class MainActivity extends Activity {
     /** Finds saved before listing times were recorded, or whose lookup hasn't run yet. */
     private void backfillListingTimes() {
         if (backfilling) return;
+        {
+            List<Listing> all = Store.finds(this);
+            boolean changed = false;
+            for (Listing l : all) {
+                if ("new".equals(l.kind) && l.listedAt > 0 && Timing.resurfaced(l)) {
+                    l.kind = "renewed";
+                    changed = true;
+                }
+            }
+            if (changed) {
+                Store.saveFinds(this, all);
+                handler.post(this::renderFinds);
+            }
+        }
         android.content.SharedPreferences fx = getSharedPreferences("fixes", MODE_PRIVATE);
         if (!fx.getBoolean("listedAtV3", false)) {
             List<Listing> all = Store.finds(this);
