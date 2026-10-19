@@ -41,6 +41,9 @@ public class Listing {
     /** Thumbnail for the notification; never stored. */
     public transient Bitmap thumb;
 
+    /** Any category-like fields Facebook attached to this listing (for troubleshooting). */
+    public transient String categoryInfo = "";
+
     public String url() {
         return "https://www.facebook.com/marketplace/item/" + id + "/";
     }

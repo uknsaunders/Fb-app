@@ -167,6 +167,24 @@ public class EditSearchActivity extends Activity {
         ProgressDialog pd = ProgressDialog.show(this, null, "Checking Facebook…", true, false);
         new Thread(() -> {
             Fetcher.Result r = Fetcher.fetch(s);
+            // With a category picked, also run the same search without it, to compare
+            String catReport = "";
+            if (!s.category.isEmpty()) {
+                Search plain = Search.fromJson(s.toJson());
+                plain.category = "";
+                Fetcher.Result r2 = Fetcher.fetch(plain);
+                int m1 = 0, m2 = 0;
+                for (Listing l : r.listings) if (s.matches(l)) m1++;
+                for (Listing l : r2.listings) if (plain.matches(l)) m2++;
+                java.util.Set<String> cats = new java.util.LinkedHashSet<>();
+                for (Listing l : r2.listings) if (!l.categoryInfo.isEmpty() && cats.size() < 4) cats.add(l.categoryInfo);
+                catReport = "\n\n— Category check —\nIn “" + Search.categoryLabel(s.category) + "”: "
+                        + r.listings.size() + " listings, " + m1 + " match your keywords\n"
+                        + "All categories: " + r2.listings.size() + " listings, " + m2 + " match\n"
+                        + (cats.isEmpty() ? "Facebook sent no category details with the listings."
+                        : "Category details Facebook sent:\n" + String.join("\n", cats));
+            }
+            final String catNote = catReport;
             boolean checkArea = s.strictArea && s.radiusKm > 0 && !s.location.trim().isEmpty();
             double[] centre = checkArea ? Geo.centre(getApplicationContext(), s) : null;
             if (centre != null) {
@@ -189,12 +207,12 @@ public class EditSearchActivity extends Activity {
             runOnUiThread(() -> {
                 if (isFinishing()) return;
                 pd.dismiss();
-                showPreview(s, r, areaUnknown, descFail);
+                showPreview(s, r, areaUnknown, descFail, catNote);
             });
         }).start();
     }
 
-    private void showPreview(Search s, Fetcher.Result r, boolean areaUnknown, java.util.Set<String> descFail) {
+    private void showPreview(Search s, Fetcher.Result r, boolean areaUnknown, java.util.Set<String> descFail, String catNote) {
         StringBuilder m = new StringBuilder();
         String title;
         if (r.error != null) {
@@ -239,6 +257,7 @@ public class EditSearchActivity extends Activity {
             if (match == 0) m.append("Your title filters rule them all out — loosen “must contain” or “skip” words.");
             else m.append("\nThese are already listed, so they won't alert. You'll be told about new ones and price drops.");
         }
+        if (!catNote.isEmpty()) m.append(catNote).append("\n\nScreenshot this and send it to Claude.");
         new AlertDialog.Builder(this)
                 .setTitle(title)
                 .setMessage(m.toString().trim())

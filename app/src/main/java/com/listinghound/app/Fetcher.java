@@ -244,6 +244,24 @@ public final class Fetcher {
         }
     }
 
+    /** Collects key=value pairs whose key mentions "categor", up to two levels deep. */
+    private static String categoryFields(JSONObject j, int depth) {
+        StringBuilder b = new StringBuilder();
+        Iterator<String> keys = j.keys();
+        while (keys.hasNext()) {
+            String k = keys.next();
+            Object v = j.opt(k);
+            if (k.toLowerCase(Locale.ROOT).contains("categor")) {
+                String val = v instanceof JSONObject || v instanceof JSONArray ? v.toString() : String.valueOf(v);
+                if (val.length() > 120) val = val.substring(0, 120) + "…";
+                b.append(k).append('=').append(val).append("; ");
+            } else if (depth < 2 && v instanceof JSONObject) {
+                b.append(categoryFields((JSONObject) v, depth + 1));
+            }
+        }
+        return b.toString();
+    }
+
     private static Listing fromNode(JSONObject j) {
         String id = j.optString("id", "");
         if (!id.matches("\\d{6,}")) return null;
@@ -251,6 +269,7 @@ public final class Fetcher {
         Listing l = new Listing();
         l.id = id;
         l.title = j.optString("marketplace_listing_title", "").trim();
+        l.categoryInfo = categoryFields(j, 0);
         JSONObject price = j.optJSONObject("listing_price");
         if (price != null) {
             l.price = price.optString("formatted_amount", "");
