@@ -513,24 +513,54 @@ public class MainActivity extends Activity {
         llDeals.addView(status);
 
         List<Listing> deals = Deals.results(this);
+        if (deals.isEmpty()) return;
+        float dp = getResources().getDisplayMetrics().density;
+
+        // Column headings
+        LinearLayout head = new LinearLayout(this);
+        head.setOrientation(LinearLayout.HORIZONTAL);
+        head.setPadding(0, (int) (2 * dp), 0, (int) (6 * dp));
+        head.addView(colHead("Score"), new LinearLayout.LayoutParams((int) (46 * dp), LinearLayout.LayoutParams.WRAP_CONTENT));
+        head.addView(colHead("Price"), new LinearLayout.LayoutParams((int) (68 * dp), LinearLayout.LayoutParams.WRAP_CONTENT));
+        head.addView(colHead("Item"), new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        TextView sh = colHead("Search");
+        sh.setGravity(android.view.Gravity.END);
+        head.addView(sh, new LinearLayout.LayoutParams((int) (80 * dp), LinearLayout.LayoutParams.WRAP_CONTENT));
+        addDivider(llDeals);
+        llDeals.addView(head);
+
         LayoutInflater inf = getLayoutInflater();
-        int shown = 0;
-        for (Listing l : deals) {
-            if (shown >= 10) break;
+        int min = Deals.minScore(this);
+        for (int i = 0; i < Math.min(15, deals.size()); i++) {
+            Listing l = deals.get(i);
             addDivider(llDeals);
-            View row = inf.inflate(R.layout.item_row, llDeals, false);
-            ((TextView) row.findViewById(R.id.title)).setText(l.score + " · "
-                    + (l.priceOrBlank().isEmpty() ? "" : l.price + " · ") + l.title);
-            StringBuilder sub = new StringBuilder();
-            if (!l.reasons.isEmpty()) sub.append(l.reasons).append('\n');
-            sub.append(l.searchName);
-            if (!l.city.isEmpty()) sub.append(" · ").append(l.city);
-            if (l.km >= 0) sub.append(" (").append(Math.round(l.km)).append(" km)");
-            ((TextView) row.findViewById(R.id.sub)).setText(sub.toString());
+            View row = inf.inflate(R.layout.item_deal, llDeals, false);
+            TextView sc = row.findViewById(R.id.score);
+            sc.setText(String.valueOf(l.score));
+            // Badge colour: alert-worthy = orange, worth a look = green, weak = grey
+            int col = l.score >= min ? R.color.accent : l.score >= 50 ? R.color.ok : R.color.subtext;
+            sc.setBackgroundTintList(android.content.res.ColorStateList.valueOf(getColor(col)));
+            ((TextView) row.findViewById(R.id.price)).setText(l.priceOrBlank().isEmpty() ? "—" : l.price);
+            ((TextView) row.findViewById(R.id.item)).setText(l.title);
+            StringBuilder why = new StringBuilder();
+            if (!l.city.isEmpty()) why.append(l.city);
+            if (l.km >= 0) why.append(why.length() > 0 ? " · " : "").append(Math.round(l.km)).append(" km");
+            if (!l.reasons.isEmpty()) why.append(why.length() > 0 ? "\n" : "").append(l.reasons);
+            ((TextView) row.findViewById(R.id.why)).setText(why.toString());
+            ((TextView) row.findViewById(R.id.tag)).setText(l.searchName);
             row.setOnClickListener(v -> startActivity(ListingViewActivity.intent(this, l)));
             llDeals.addView(row);
-            shown++;
         }
+    }
+
+    private TextView colHead(String s) {
+        TextView t = new TextView(this);
+        t.setText(s.toUpperCase(java.util.Locale.UK));
+        t.setTextColor(getColor(R.color.subtext));
+        t.setTextSize(11);
+        t.setLetterSpacing(0.06f);
+        t.setTypeface(null, android.graphics.Typeface.BOLD);
+        return t;
     }
 
     private static final String[][] FILTERS = {

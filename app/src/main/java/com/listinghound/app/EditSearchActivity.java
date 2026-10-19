@@ -14,6 +14,7 @@ public class EditSearchActivity extends Activity {
     private EditText etQuery, etName, etLocation, etRadius, etMin, etMax, etInclude, etExclude;
     private Search original;
     private Switch swArea;
+    private android.widget.Spinner spCategory, spIncludeMode;
     private android.widget.Spinner spNew, spDrop, spRenewed, spUpdated;
 
     @Override
@@ -28,6 +29,19 @@ public class EditSearchActivity extends Activity {
         etMin = findViewById(R.id.etMin);
         etMax = findViewById(R.id.etMax);
         etInclude = findViewById(R.id.etInclude);
+        spCategory = findViewById(R.id.spCategory);
+        String[] cats = new String[Search.CATEGORIES.length];
+        for (int i = 0; i < cats.length; i++) cats[i] = Search.CATEGORIES[i][1];
+        android.widget.ArrayAdapter<String> ca = new android.widget.ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, cats);
+        ca.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spCategory.setAdapter(ca);
+        spIncludeMode = findViewById(R.id.spIncludeMode);
+        android.widget.ArrayAdapter<String> ia = new android.widget.ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item,
+                new String[]{"Title must contain ALL of these words", "Title must contain ANY of these words"});
+        ia.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spIncludeMode.setAdapter(ia);
         etExclude = findViewById(R.id.etExclude);
         spNew = modeSpinner(R.id.spNew);
         spDrop = modeSpinner(R.id.spDrop);
@@ -55,6 +69,9 @@ public class EditSearchActivity extends Activity {
             etMin.setText(original.minPrice > 0 ? String.valueOf(original.minPrice) : "");
             etMax.setText(original.maxPrice > 0 ? String.valueOf(original.maxPrice) : "");
             etInclude.setText(original.include);
+            for (int i = 0; i < Search.CATEGORIES.length; i++)
+                if (Search.CATEGORIES[i][0].equals(original.category)) spCategory.setSelection(i);
+            spIncludeMode.setSelection(original.includeAny ? 1 : 0);
             etExclude.setText(original.exclude);
         }
 
@@ -85,6 +102,8 @@ public class EditSearchActivity extends Activity {
         s.minPrice = num(etMin);
         s.maxPrice = num(etMax);
         s.include = etInclude.getText().toString().trim();
+        s.category = Search.CATEGORIES[spCategory.getSelectedItemPosition()][0];
+        s.includeAny = spIncludeMode.getSelectedItemPosition() == 1;
         s.exclude = etExclude.getText().toString().trim();
         s.modeNew = spNew.getSelectedItemPosition();
         s.modeDrop = spDrop.getSelectedItemPosition();
@@ -169,6 +188,8 @@ public class EditSearchActivity extends Activity {
         } else if (r.listings.isEmpty()) {
             title = "No listings found";
             m.append("Facebook returned a page but no listings could be read. Try a broader search, check the location, or log in.");
+            if (!s.category.isEmpty()) m.append("\n\nYou've picked the “").append(Search.categoryLabel(s.category))
+                    .append("” category. If it stays empty, try Any category and add skip words instead (e.g. artificial, christmas).");
         } else {
             int match = 0, far = 0;
             StringBuilder lines = new StringBuilder();

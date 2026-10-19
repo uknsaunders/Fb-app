@@ -23,6 +23,39 @@ public class Search {
     /** Comma-separated words; any of them in the title rejects the listing. */
     public String exclude = "";
     public boolean enabled = true;
+    /** Facebook category slug, e.g. "garden"; blank = any category. */
+    public String category = "";
+    /** false = title must contain ALL the words; true = ANY one of them. */
+    public boolean includeAny = false;
+
+    public static final String[][] CATEGORIES = {
+            {"", "Any category"},
+            {"garden", "Garden & outdoor"},
+            {"home-improvements", "Home improvement & DIY"},
+            {"tools", "Tools"},
+            {"furniture", "Furniture"},
+            {"appliances", "Household appliances"},
+            {"electronics", "Electronics"},
+            {"sports", "Sports & outdoors"},
+            {"toys", "Toys & games"},
+            {"family", "Family & baby"},
+            {"apparel", "Clothing"},
+            {"instruments", "Musical instruments"},
+            {"video-games", "Video games"},
+            {"antiques", "Antiques & collectibles"},
+            {"entertainment", "Books, films & music"},
+            {"office-supplies", "Office supplies"},
+            {"pets", "Pet supplies"},
+            {"free", "Free stuff"},
+            {"vehicles", "Vehicles"},
+            {"motorcycles", "Motorcycles"},
+            {"boats", "Boats"},
+            {"propertyrentals", "Property for rent"}};
+
+    public static String categoryLabel(String slug) {
+        for (String[] c : CATEGORIES) if (c[0].equals(slug)) return c[1];
+        return slug;
+    }
     // What to do with each kind of find
     public static final int ALERT = 0, LIST_ONLY = 1, IGNORE = 2;
     public static final String[] MODE_LABELS = {"Alert me", "List only (no alert)", "Ignore"};
@@ -57,14 +90,23 @@ public class Search {
             else if (minPrice > 0) b.append("£").append(minPrice).append('+');
             else b.append("up to £").append(maxPrice);
         }
-        if (!include.trim().isEmpty()) b.append(" · must have: ").append(include.trim());
+        if (!category.isEmpty()) b.append(" · in ").append(categoryLabel(category));
+        if (!include.trim().isEmpty()) b.append(includeAny ? " · any of: " : " · must have: ").append(include.trim());
         if (!exclude.trim().isEmpty()) b.append(" · not: ").append(exclude.trim());
         return b.toString();
     }
 
     public boolean matches(Listing l) {
         String t = (l.title == null ? "" : l.title).toLowerCase(Locale.ROOT);
-        for (String w : words(include)) if (!t.contains(w)) return false;
+        List<String> inc = words(include);
+        if (!inc.isEmpty()) {
+            boolean any = false, all = true;
+            for (String w : inc) {
+                if (t.contains(w)) any = true;
+                else all = false;
+            }
+            if (includeAny ? !any : !all) return false;
+        }
         for (String w : words(exclude)) if (t.contains(w)) return false;
         if (l.amount >= 0) {
             if (minPrice > 0 && l.amount < minPrice) return false;
@@ -96,6 +138,8 @@ public class Search {
             j.put("include", include);
             j.put("exclude", exclude);
             j.put("enabled", enabled);
+            j.put("category", category);
+            j.put("includeAny", includeAny);
             j.put("modeNew", modeNew);
             j.put("modeDrop", modeDrop);
             j.put("modeRenewed", modeRenewed);
@@ -118,6 +162,8 @@ public class Search {
         s.include = j.optString("include", "");
         s.exclude = j.optString("exclude", "");
         s.enabled = j.optBoolean("enabled", true);
+        s.category = j.optString("category", "");
+        s.includeAny = j.optBoolean("includeAny", false);
         // Older versions had on/off switches for drops and title changes
         s.modeNew = j.optInt("modeNew", ALERT);
         s.modeDrop = j.has("modeDrop") ? j.optInt("modeDrop") : (j.optBoolean("alertDrops", true) ? ALERT : IGNORE);
@@ -134,6 +180,7 @@ public class Search {
                 || !location.equals(o.location)
                 || radiusKm != o.radiusKm
                 || minPrice != o.minPrice
-                || maxPrice != o.maxPrice;
+                || maxPrice != o.maxPrice
+                || !category.equals(o.category);
     }
 }

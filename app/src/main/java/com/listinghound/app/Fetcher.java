@@ -54,14 +54,21 @@ public final class Fetcher {
     public static String buildUrl(Search s, String sort, int radiusKm) {
         StringBuilder u = new StringBuilder(FB).append("/marketplace/");
         String loc = s.location.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_\\-]", "");
-        if (!loc.isEmpty()) u.append(loc).append('/');
+        String cat = s.category == null ? "" : s.category.trim();
+        if (!cat.isEmpty()) {
+            // Category page, searched within: /marketplace/<city>/<category>?query=
+            u.append(loc.isEmpty() ? "category" : loc).append('/').append(cat).append('?');
+        } else {
+            if (!loc.isEmpty()) u.append(loc).append('/');
+            u.append("search?");
+        }
         String q;
         try {
             q = URLEncoder.encode(s.query.trim(), "UTF-8");
         } catch (Exception e) {
             q = s.query.trim();
         }
-        u.append("search?query=").append(q);
+        u.append("query=").append(q);
         u.append("&sortBy=").append(sort).append("&exact=false");
         if (s.minPrice > 0) u.append("&minPrice=").append(s.minPrice);
         if (s.maxPrice > 0) u.append("&maxPrice=").append(s.maxPrice);
