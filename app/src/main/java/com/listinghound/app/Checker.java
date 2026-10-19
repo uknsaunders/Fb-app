@@ -18,6 +18,7 @@ public final class Checker {
         public final List<Listing> alerts = new ArrayList<>();
         public int ignored;
         public int repeats;
+        public int descSkipped;
         public int searched;
         public int failed;
         public int ok;
@@ -129,6 +130,18 @@ public final class Checker {
                 sum.ignored++;
             }
         }
+        // Description filters: open each remaining find and read its description
+        int descChecks = 0;
+        for (int i = sum.fresh.size() - 1; i >= 0; i--) {
+            Listing l = sum.fresh.get(i);
+            Search s = byId.get(l.searchId);
+            if (s == null || !s.hasDescFilter() || descChecks >= 12) continue;
+            descChecks++;
+            if (!s.descOk(Fetcher.description(l.id))) {
+                sum.fresh.remove(i);
+                sum.descSkipped++;
+            }
+        }
         for (Listing l : sum.fresh) {
             Search s = byId.get(l.searchId);
             if (s == null || s.modeFor(l.kind) == Search.ALERT) sum.alerts.add(l);
@@ -160,6 +173,7 @@ public final class Checker {
             if (d > 0) sum.text += ", " + d + " price drop" + (d == 1 ? "" : "s");
             if (u > 0) sum.text += ", " + u + " updated";
             if (rn > 0) sum.text += ", " + rn + " renewed";
+            if (sum.descSkipped > 0) sum.text += " · " + sum.descSkipped + " skipped by description";
             if (sum.repeats > 0) sum.text += " · " + sum.repeats + " already seen";
             if (sum.ignored > 0) sum.text += " · " + sum.ignored + " ignored by your settings";
             if (sum.outOfArea > 0) sum.text += " · " + sum.outOfArea + " outside your radius ignored";

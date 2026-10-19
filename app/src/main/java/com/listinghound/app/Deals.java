@@ -148,6 +148,18 @@ public final class Deals {
         for (Search s : Store.searches(c)) byId.put(s.id, s);
         for (Listing l : all) rescore(c, l, byId.get(l.searchId));
         Collections.sort(all, (a, b) -> b.score - a.score);
+        // Description filters: check the leading candidates, drop any that fail
+        int descChecks = 0;
+        for (int i = 0; i < all.size() && descChecks < 25; i++) {
+            Listing l = all.get(i);
+            Search s = byId.get(l.searchId);
+            if (s == null || !s.hasDescFilter()) continue;
+            descChecks++;
+            if (!s.descOk(Fetcher.description(l.id))) {
+                all.remove(i);
+                i--;
+            }
+        }
 
         String note = searched == 0 ? "No searches switched on"
                 : failed == searched ? "Couldn't reach Facebook"
@@ -163,7 +175,7 @@ public final class Deals {
         LinkedHashMap<String, Listing> got = new LinkedHashMap<>();
         boolean ok = false;
         for (String sort : new String[]{"creation_time_descend", "price_ascend"}) {
-            Fetcher.Result r = Fetcher.fetchUrl(Fetcher.buildUrl(s, sort, wide));
+            Fetcher.Result r = Fetcher.fetchAll(s, sort, wide);
             if (r.error != null || r.loginWall) continue;
             ok = true;
             for (Listing l : r.listings) if (!got.containsKey(l.id)) got.put(l.id, l);

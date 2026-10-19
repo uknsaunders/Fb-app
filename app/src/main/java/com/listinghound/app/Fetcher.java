@@ -47,11 +47,44 @@ public final class Fetcher {
         public int httpCode;
     }
 
-    public static String buildUrl(Search s) {
-        return buildUrl(s, "creation_time_descend", s.radiusKm);
+    public static String buildUrl(Search s, String sort, int radiusKm) {
+        List<String> qs = s.fbQueries();
+        return buildUrl(s, qs.isEmpty() ? s.query : qs.get(0), sort, radiusKm);
     }
 
-    public static String buildUrl(Search s, String sort, int radiusKm) {
+    /** Runs each of the search's Facebook queries and merges the results. */
+    public static Result fetchAll(Search s, String sort, int radiusKm) {
+        Result merged = new Result();
+        List<String> qs = s.fbQueries();
+        if (qs.isEmpty()) qs = java.util.Collections.singletonList(s.query);
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        int ok = 0, walls = 0;
+        for (int i = 0; i < qs.size(); i++) {
+            if (i > 0) {
+                try {
+                    Thread.sleep(1200 + (long) (Math.random() * 1500));
+                } catch (InterruptedException ignored) {
+                }
+            }
+            Result r = fetchUrl(buildUrl(s, qs.get(i), sort, radiusKm));
+            merged.httpCode = r.httpCode;
+            if (r.error != null) {
+                merged.error = r.error;
+                continue;
+            }
+            if (r.loginWall) {
+                walls++;
+                continue;
+            }
+            ok++;
+            for (Listing l : r.listings) if (ids.add(l.id)) merged.listings.add(l);
+        }
+        if (ok > 0) merged.error = null;
+        merged.loginWall = ok == 0 && walls > 0;
+        return merged;
+    }
+
+    public static String buildUrl(Search s, String query, String sort, int radiusKm) {
         StringBuilder u = new StringBuilder(FB).append("/marketplace/");
         String loc = s.location.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_\\-]", "");
         String cat = s.category == null ? "" : s.category.trim();
@@ -64,9 +97,9 @@ public final class Fetcher {
         }
         String q;
         try {
-            q = URLEncoder.encode(s.query.trim(), "UTF-8");
+            q = URLEncoder.encode(query.trim(), "UTF-8");
         } catch (Exception e) {
-            q = s.query.trim();
+            q = query.trim();
         }
         u.append("query=").append(q);
         u.append("&sortBy=").append(sort).append("&exact=false");
@@ -106,7 +139,7 @@ public final class Fetcher {
             .build();
 
     public static Result fetch(Search s) {
-        return fetchUrl(buildUrl(s));
+        return fetchAll(s, "creation_time_descend", s.radiusKm);
     }
 
     public static Result fetchUrl(String pageUrl) {
@@ -363,6 +396,81 @@ public final class Fetcher {
             }
         }
         return -1;
+    }
+
+    private static final Map<String, String> DESC_CACHE = new LinkedHashMap<String, String>() {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, String> e) {
+            return size() > 300;
+        }
+    };
+
+    /** The listing's description text, or null if it can't be read. */
+    public static String description(String id) {
+        synchronized (DESC_CACHE) {
+            if (DESC_CACHE.containsKey(id)) return DESC_CACHE.get(id);
+        }
+        String d = null;
+        try {
+            String html = fetchItemPage(id, null, null);
+            if (html != null) d = descFromPage(html, id);
+        } catch (Exception ignored) {
+        }
+        if (d != null) {
+            synchronized (DESC_CACHE) {
+                DESC_CACHE.put(id, d);
+            }
+        }
+        return d;
+    }
+
+    private static String descFromPage(String html, String id) {
+        Matcher m = SCRIPT.matcher(html);
+        while (m.find()) {
+            String js = m.group(1);
+            if (js == null || !js.contains(id) || !js.contains("description")) continue;
+            try {
+                String d = findDesc(new JSONTokener(js).nextValue(), id, 0, false);
+                if (d != null) return d;
+            } catch (Throwable ignored) {
+            }
+        }
+        return null;
+    }
+
+    private static String findDesc(Object o, String id, int depth, boolean inListing) {
+        if (o == null || depth > 220) return null;
+        if (o instanceof JSONObject) {
+            JSONObject j = (JSONObject) o;
+            boolean here = inListing || id.equals(j.optString("id", null));
+            if (here) {
+                for (String k : new String[]{"redacted_description", "description"}) {
+                    Object v = j.opt(k);
+                    if (v instanceof JSONObject) {
+                        String t = ((JSONObject) v).optString("text", null);
+                        if (t != null && !t.isEmpty()) return t;
+                    } else if (v instanceof String && !((String) v).isEmpty()) {
+                        return (String) v;
+                    }
+                }
+            }
+            Iterator<String> keys = j.keys();
+            while (keys.hasNext()) {
+                Object v = j.opt(keys.next());
+                // Stay inside this listing: don't wander into other listings (they have their own long IDs)
+                boolean child = here && !(v instanceof JSONObject && ((JSONObject) v).optString("id", "").matches("\\d{8,}"))
+                        && depth < 200;
+                String d = findDesc(v, id, depth + 1, child && here);
+                if (d != null) return d;
+            }
+        } else if (o instanceof JSONArray) {
+            JSONArray a = (JSONArray) o;
+            for (int i = 0; i < a.length(); i++) {
+                String d = findDesc(a.opt(i), id, depth + 1, inListing);
+                if (d != null) return d;
+            }
+        }
+        return null;
     }
 
     /** When a listing was posted. Returns ms, or -1 if it can't be found reliably. */

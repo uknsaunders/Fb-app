@@ -11,7 +11,8 @@ import android.widget.TextView;
 
 public class EditSearchActivity extends Activity {
 
-    private EditText etQuery, etName, etLocation, etRadius, etMin, etMax, etInclude, etExclude;
+    private EditText etQuery, etName, etLocation, etRadius, etMin, etMax, etExclude, etDescInc, etDescExc;
+    private Switch swTitleOnly;
     private Search original;
     private Switch swArea;
     private android.widget.Spinner spCategory, spIncludeMode;
@@ -28,7 +29,9 @@ public class EditSearchActivity extends Activity {
         etRadius = findViewById(R.id.etRadius);
         etMin = findViewById(R.id.etMin);
         etMax = findViewById(R.id.etMax);
-        etInclude = findViewById(R.id.etInclude);
+        etDescInc = findViewById(R.id.etDescInc);
+        etDescExc = findViewById(R.id.etDescExc);
+        swTitleOnly = findViewById(R.id.swTitleOnly);
         spCategory = findViewById(R.id.spCategory);
         String[] cats = new String[Search.CATEGORIES.length];
         for (int i = 0; i < cats.length; i++) cats[i] = Search.CATEGORIES[i][1];
@@ -39,7 +42,7 @@ public class EditSearchActivity extends Activity {
         spIncludeMode = findViewById(R.id.spIncludeMode);
         android.widget.ArrayAdapter<String> ia = new android.widget.ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item,
-                new String[]{"Title must contain ALL of these words", "Title must contain ANY of these words"});
+                new String[]{"Match ALL keywords", "Match ANY keyword (searches each one)"});
         ia.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spIncludeMode.setAdapter(ia);
         etExclude = findViewById(R.id.etExclude);
@@ -57,6 +60,7 @@ public class EditSearchActivity extends Activity {
         spRenewed.setSelection(d.modeRenewed);
         spUpdated.setSelection(d.modeUpdated);
         swArea.setChecked(original == null || original.strictArea);
+        swTitleOnly.setChecked(original == null || original.titleOnly);
 
         ((TextView) findViewById(R.id.tvHeading)).setText(original == null ? "New search" : "Edit search");
         findViewById(R.id.btnDelete).setVisibility(original == null ? View.GONE : View.VISIBLE);
@@ -68,7 +72,8 @@ public class EditSearchActivity extends Activity {
             etRadius.setText(original.radiusKm > 0 ? String.valueOf(original.radiusKm) : "");
             etMin.setText(original.minPrice > 0 ? String.valueOf(original.minPrice) : "");
             etMax.setText(original.maxPrice > 0 ? String.valueOf(original.maxPrice) : "");
-            etInclude.setText(original.include);
+            etDescInc.setText(original.descInclude);
+            etDescExc.setText(original.descExclude);
             for (int i = 0; i < Search.CATEGORIES.length; i++)
                 if (Search.CATEGORIES[i][0].equals(original.category)) spCategory.setSelection(i);
             spIncludeMode.setSelection(original.includeAny ? 1 : 0);
@@ -101,7 +106,10 @@ public class EditSearchActivity extends Activity {
         s.radiusKm = num(etRadius);
         s.minPrice = num(etMin);
         s.maxPrice = num(etMax);
-        s.include = etInclude.getText().toString().trim();
+        s.include = "";
+        s.titleOnly = swTitleOnly.isChecked();
+        s.descInclude = etDescInc.getText().toString().trim();
+        s.descExclude = etDescExc.getText().toString().trim();
         s.category = Search.CATEGORIES[spCategory.getSelectedItemPosition()][0];
         s.includeAny = spIncludeMode.getSelectedItemPosition() == 1;
         s.exclude = etExclude.getText().toString().trim();
@@ -124,7 +132,7 @@ public class EditSearchActivity extends Activity {
     private void save() {
         Search s = fromForm();
         if (s.query.isEmpty()) {
-            etQuery.setError("Enter something to search for");
+            etQuery.setError("Enter at least one keyword");
             return;
         }
         if (s.minPrice > 0 && s.maxPrice > 0 && s.minPrice > s.maxPrice) {
@@ -153,7 +161,7 @@ public class EditSearchActivity extends Activity {
     private void preview() {
         Search s = fromForm();
         if (s.query.isEmpty()) {
-            etQuery.setError("Enter something to search for");
+            etQuery.setError("Enter at least one keyword");
             return;
         }
         ProgressDialog pd = ProgressDialog.show(this, null, "Checking Facebook…", true, false);
@@ -168,15 +176,25 @@ public class EditSearchActivity extends Activity {
                 }
             }
             final boolean areaUnknown = checkArea && centre == null;
+            // Check descriptions for the first few matches so the test reflects those filters too
+            final java.util.Set<String> descFail = new java.util.HashSet<>();
+            if (s.hasDescFilter()) {
+                int n = 0;
+                for (Listing l : r.listings) {
+                    if (!s.matches(l)) continue;
+                    if (n++ >= 8) break;
+                    if (!s.descOk(Fetcher.description(l.id))) descFail.add(l.id);
+                }
+            }
             runOnUiThread(() -> {
                 if (isFinishing()) return;
                 pd.dismiss();
-                showPreview(s, r, areaUnknown);
+                showPreview(s, r, areaUnknown, descFail);
             });
         }).start();
     }
 
-    private void showPreview(Search s, Fetcher.Result r, boolean areaUnknown) {
+    private void showPreview(Search s, Fetcher.Result r, boolean areaUnknown, java.util.Set<String> descFail) {
         StringBuilder m = new StringBuilder();
         String title;
         if (r.error != null) {
@@ -199,6 +217,7 @@ public class EditSearchActivity extends Activity {
                     far++;
                     continue;
                 }
+                if (descFail.contains(l.id)) continue;
                 match++;
                 if (match <= 12) {
                     lines.append("• ")
@@ -212,6 +231,9 @@ public class EditSearchActivity extends Activity {
             title = match + " of " + r.listings.size() + " listings match";
             m.append(lines);
             if (match > 12) m.append("…and ").append(match - 12).append(" more\n");
+            if (!descFail.isEmpty()) m.append("\n").append(descFail.size()).append(" more ruled out by their description.\n");
+            if (s.fbQueries().size() > 1) m.append("\nSearched Facebook for each keyword separately: ")
+                    .append(String.join(" · ", s.fbQueries())).append(".\n");
             if (far > 0) m.append("\n").append(far).append(" more were outside your radius and will be ignored.\n");
             if (areaUnknown) m.append("\nCouldn't find “").append(s.location).append("” on the map, so distances can't be checked. Try the town's full name.\n");
             if (match == 0) m.append("Your title filters rule them all out — loosen “must contain” or “skip” words.");

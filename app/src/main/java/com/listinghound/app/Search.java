@@ -25,8 +25,55 @@ public class Search {
     public boolean enabled = true;
     /** Facebook category slug, e.g. "garden"; blank = any category. */
     public String category = "";
-    /** false = title must contain ALL the words; true = ANY one of them. */
+    /** false = match ALL keywords; true = match ANY keyword (each is searched separately). */
     public boolean includeAny = false;
+    /** Keywords must appear in the listing title, not just somewhere Facebook matched them. */
+    public boolean titleOnly = true;
+    /** Description filters (comma-separated, any of). */
+    public String descInclude = "";
+    public String descExclude = "";
+
+    /** The comma-separated keyword phrases. */
+    public List<String> phrases() {
+        return words(query);
+    }
+
+    /** What to send to Facebook: one search for ALL, one per keyword for ANY. */
+    public List<String> fbQueries() {
+        List<String> p = phrases();
+        List<String> out = new ArrayList<>();
+        if (p.isEmpty()) return out;
+        if (includeAny) {
+            for (int i = 0; i < Math.min(5, p.size()); i++) out.add(p.get(i));
+        } else {
+            out.add(String.join(" ", p));
+        }
+        return out;
+    }
+
+    public boolean hasDescFilter() {
+        return !words(descInclude).isEmpty() || !words(descExclude).isEmpty();
+    }
+
+    /** Description test; an unknown description (null) passes. */
+    public boolean descOk(String desc) {
+        if (desc == null) return true;
+        String d = desc.toLowerCase(Locale.ROOT);
+        List<String> inc = words(descInclude);
+        if (!inc.isEmpty()) {
+            boolean any = false;
+            for (String w : inc) if (d.contains(w)) any = true;
+            if (!any) return false;
+        }
+        for (String w : words(descExclude)) if (d.contains(w)) return false;
+        return true;
+    }
+
+    /** All the words of a phrase appear in the text, in any order. */
+    static boolean phraseIn(String text, String phrase) {
+        for (String w : phrase.split("\\s+")) if (!w.isEmpty() && !text.contains(w)) return false;
+        return true;
+    }
 
     public static final String[][] CATEGORIES = {
             {"", "Any category"},
@@ -81,7 +128,10 @@ public class Search {
 
     public String summary() {
         StringBuilder b = new StringBuilder();
-        b.append('"').append(query.trim()).append('"');
+        List<String> kws = phrases();
+        if (kws.size() > 1) b.append(includeAny ? "any of: " : "all of: ");
+        b.append(String.join(", ", kws));
+        if (titleOnly) b.append(" (in title)");
         if (!location.trim().isEmpty()) b.append(" · ").append(location.trim());
         if (radiusKm > 0) b.append(" · ").append(radiusKm).append(" km");
         if (minPrice > 0 || maxPrice > 0) {
@@ -91,18 +141,19 @@ public class Search {
             else b.append("up to £").append(maxPrice);
         }
         if (!category.isEmpty()) b.append(" · in ").append(categoryLabel(category));
-        if (!include.trim().isEmpty()) b.append(includeAny ? " · any of: " : " · must have: ").append(include.trim());
+        if (!descInclude.trim().isEmpty()) b.append(" · description has: ").append(descInclude.trim());
+        if (!descExclude.trim().isEmpty()) b.append(" · description not: ").append(descExclude.trim());
         if (!exclude.trim().isEmpty()) b.append(" · not: ").append(exclude.trim());
         return b.toString();
     }
 
     public boolean matches(Listing l) {
         String t = (l.title == null ? "" : l.title).toLowerCase(Locale.ROOT);
-        List<String> inc = words(include);
-        if (!inc.isEmpty()) {
+        List<String> kws = phrases();
+        if (titleOnly && !kws.isEmpty()) {
             boolean any = false, all = true;
-            for (String w : inc) {
-                if (t.contains(w)) any = true;
+            for (String p : kws) {
+                if (phraseIn(t, p)) any = true;
                 else all = false;
             }
             if (includeAny ? !any : !all) return false;
@@ -140,6 +191,9 @@ public class Search {
             j.put("enabled", enabled);
             j.put("category", category);
             j.put("includeAny", includeAny);
+            j.put("titleOnly", titleOnly);
+            j.put("descInclude", descInclude);
+            j.put("descExclude", descExclude);
             j.put("modeNew", modeNew);
             j.put("modeDrop", modeDrop);
             j.put("modeRenewed", modeRenewed);
@@ -164,6 +218,16 @@ public class Search {
         s.enabled = j.optBoolean("enabled", true);
         s.category = j.optString("category", "");
         s.includeAny = j.optBoolean("includeAny", false);
+        s.descInclude = j.optString("descInclude", "");
+        s.descExclude = j.optString("descExclude", "");
+        if (j.has("titleOnly")) {
+            s.titleOnly = j.optBoolean("titleOnly", true);
+        } else {
+            // Older versions: a separate "title must contain" list. Fold it into the keywords.
+            String inc = j.optString("include", "").trim();
+            s.titleOnly = !inc.isEmpty();
+            if (!inc.isEmpty() && s.includeAny) s.query = inc;
+        }
         // Older versions had on/off switches for drops and title changes
         s.modeNew = j.optInt("modeNew", ALERT);
         s.modeDrop = j.has("modeDrop") ? j.optInt("modeDrop") : (j.optBoolean("alertDrops", true) ? ALERT : IGNORE);
@@ -181,6 +245,7 @@ public class Search {
                 || radiusKm != o.radiusKm
                 || minPrice != o.minPrice
                 || maxPrice != o.maxPrice
-                || !category.equals(o.category);
+                || !category.equals(o.category)
+                || includeAny != o.includeAny;
     }
 }
