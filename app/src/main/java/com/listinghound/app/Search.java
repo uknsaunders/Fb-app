@@ -23,8 +23,22 @@ public class Search {
     /** Comma-separated words; any of them in the title rejects the listing. */
     public String exclude = "";
     public boolean enabled = true;
-    public boolean alertDrops = true;
-    public boolean alertUpdates = true;
+    // What to do with each kind of find
+    public static final int ALERT = 0, LIST_ONLY = 1, IGNORE = 2;
+    public static final String[] MODE_LABELS = {"Alert me", "List only (no alert)", "Ignore"};
+    public int modeNew = ALERT;
+    public int modeDrop = ALERT;
+    public int modeRenewed = LIST_ONLY;
+    public int modeUpdated = ALERT;
+
+    public int modeFor(String kind) {
+        switch (kind) {
+            case "drop": return modeDrop;
+            case "renewed": return modeRenewed;
+            case "updated": return modeUpdated;
+            default: return modeNew;
+        }
+    }
     /** Ignore listings further away than the radius, even if Facebook includes them. */
     public boolean strictArea = true;
 
@@ -82,8 +96,10 @@ public class Search {
             j.put("include", include);
             j.put("exclude", exclude);
             j.put("enabled", enabled);
-            j.put("alertDrops", alertDrops);
-            j.put("alertUpdates", alertUpdates);
+            j.put("modeNew", modeNew);
+            j.put("modeDrop", modeDrop);
+            j.put("modeRenewed", modeRenewed);
+            j.put("modeUpdated", modeUpdated);
             j.put("strictArea", strictArea);
         } catch (JSONException ignored) {
         }
@@ -102,8 +118,11 @@ public class Search {
         s.include = j.optString("include", "");
         s.exclude = j.optString("exclude", "");
         s.enabled = j.optBoolean("enabled", true);
-        s.alertDrops = j.optBoolean("alertDrops", true);
-        s.alertUpdates = j.optBoolean("alertUpdates", true);
+        // Older versions had on/off switches for drops and title changes
+        s.modeNew = j.optInt("modeNew", ALERT);
+        s.modeDrop = j.has("modeDrop") ? j.optInt("modeDrop") : (j.optBoolean("alertDrops", true) ? ALERT : IGNORE);
+        s.modeRenewed = j.optInt("modeRenewed", LIST_ONLY);
+        s.modeUpdated = j.has("modeUpdated") ? j.optInt("modeUpdated") : (j.optBoolean("alertUpdates", true) ? ALERT : IGNORE);
         s.strictArea = j.optBoolean("strictArea", true);
         return s;
     }

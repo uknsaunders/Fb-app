@@ -118,24 +118,24 @@
                 android:textColor="@color/text"
                 android:textSize="15sp" />
 
-            <Switch
-                android:id="@+id/swDrops"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:minHeight="48dp"
-                android:text="Alert when a price is lowered"
-                android:textColor="@color/text"
-                android:textSize="15sp" />
+            <TextView
+                style="@style/Label"
+                android:layout_marginTop="20dp"
+                android:text="WHAT TO TELL YOU ABOUT"
+                android:textStyle="bold"
+                android:letterSpacing="0.06" />
 
-            <Switch
-                android:id="@+id/swUpdates"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="48dp"
-                android:text="Alert when a listing's title is changed"
-                android:textColor="@color/text"
-                android:textSize="15sp" />
+            <TextView style="@style/Label" android:layout_marginTop="8dp" android:text="New listings" />
+            <Spinner android:id="@+id/spNew" android:layout_width="match_parent" android:layout_height="48dp" />
+
+            <TextView style="@style/Label" android:layout_marginTop="4dp" android:text="Price drops" />
+            <Spinner android:id="@+id/spDrop" android:layout_width="match_parent" android:layout_height="48dp" />
+
+            <TextView style="@style/Label" android:layout_marginTop="4dp" android:text="Renewed / not selling (older listings bumped back up)" />
+            <Spinner android:id="@+id/spRenewed" android:layout_width="match_parent" android:layout_height="48dp" />
+
+            <TextView style="@style/Label" android:layout_marginTop="4dp" android:text="Title changed" />
+            <Spinner android:id="@+id/spUpdated" android:layout_width="match_parent" android:layout_height="48dp" />
         </LinearLayout>
 
         <Button

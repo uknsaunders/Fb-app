@@ -14,6 +14,9 @@ public final class Checker {
 
     public static class Summary {
         public final List<Listing> fresh = new ArrayList<>();
+        /** The part of fresh that should notify (the rest is list-only). */
+        public final List<Listing> alerts = new ArrayList<>();
+        public int ignored;
         public int searched;
         public int failed;
         public int ok;
@@ -67,11 +70,11 @@ public final class Checker {
                         l.kind = "new";
                         l.prevCheckAt = prevOk;
                         sum.fresh.add(l);
-                    } else if (s.alertDrops && prev.amount > 0 && l.amount >= 0 && l.amount < prev.amount - 0.005) {
+                    } else if (s.modeDrop != Search.IGNORE && prev.amount > 0 && l.amount >= 0 && l.amount < prev.amount - 0.005) {
                         l.kind = "drop";
                         l.oldPrice = formatLike(l.price, prev.amount);
                         sum.fresh.add(l);
-                    } else if (s.alertUpdates && !prev.title.isEmpty() && !l.title.isEmpty()
+                    } else if (s.modeUpdated != Search.IGNORE && !prev.title.isEmpty() && !l.title.isEmpty()
                             && !prev.title.equalsIgnoreCase(l.title)) {
                         l.kind = "updated";
                         l.oldTitle = prev.title;
@@ -79,6 +82,7 @@ public final class Checker {
                     }
                 }
                 l.searchName = s.displayName();
+                l.searchId = s.id;
                 l.foundAt = now;
                 seen.put(l.id, new Store.Seen(l.amount, l.title));
             }
@@ -87,15 +91,40 @@ public final class Checker {
             sum.ok++;
         }
 
-        // When were the new ones posted? (shows how quickly they were spotted)
-        for (int i = 0; i < Math.min(5, sum.fresh.size()); i++) {
+        // When were the new ones posted? Old ones being bumped back up are "renewed", not new.
+        java.util.Map<String, Search> byId = new java.util.HashMap<>();
+        for (Search s : list) byId.put(s.id, s);
+        int lookups = 0;
+        for (Listing l : sum.fresh) {
+            if (!"new".equals(l.kind)) continue;
+            Search s = byId.get(l.searchId);
+            boolean matters = s == null || s.modeRenewed != s.modeNew;
+            if (l.listedAt == 0 && (matters || lookups < 5) && lookups < 12) {
+                l.listedAt = Fetcher.listedAt(l.id);
+                lookups++;
+            }
+            long ref = l.prevCheckAt > 0 ? l.prevCheckAt : l.foundAt;
+            if (l.listedAt > 0 && ref - l.listedAt > Timing.RESURFACED) l.kind = "renewed";
+        }
+
+        // Apply each search's choice for each kind: alert, list only, or ignore
+        for (int i = sum.fresh.size() - 1; i >= 0; i--) {
             Listing l = sum.fresh.get(i);
-            if ("new".equals(l.kind) && l.listedAt == 0) l.listedAt = Fetcher.listedAt(l.id);
+            Search s = byId.get(l.searchId);
+            int mode = s == null ? Search.ALERT : s.modeFor(l.kind);
+            if (mode == Search.IGNORE) {
+                sum.fresh.remove(i);
+                sum.ignored++;
+            }
+        }
+        for (Listing l : sum.fresh) {
+            Search s = byId.get(l.searchId);
+            if (s == null || s.modeFor(l.kind) == Search.ALERT) sum.alerts.add(l);
         }
 
         // Thumbnails for the first few alerts only
-        for (int i = 0; i < Math.min(5, sum.fresh.size()); i++) {
-            Listing l = sum.fresh.get(i);
+        for (int i = 0; i < Math.min(5, sum.alerts.size()); i++) {
+            Listing l = sum.alerts.get(i);
             l.thumb = Fetcher.thumbnail(l.imageUrl);
         }
         if (!sum.fresh.isEmpty()) Store.addFinds(c, sum.fresh);
@@ -108,15 +137,18 @@ public final class Checker {
         } else if (sum.failed == sum.searched) {
             sum.text = "Couldn't reach Facebook" + (sum.lastError != null ? " (" + sum.lastError + ")" : "");
         } else {
-            int n = 0, d = 0, u = 0;
+            int n = 0, d = 0, u = 0, rn = 0;
             for (Listing l : sum.fresh) {
                 if ("drop".equals(l.kind)) d++;
                 else if ("updated".equals(l.kind)) u++;
+                else if ("renewed".equals(l.kind)) rn++;
                 else n++;
             }
             sum.text = n + " new";
             if (d > 0) sum.text += ", " + d + " price drop" + (d == 1 ? "" : "s");
             if (u > 0) sum.text += ", " + u + " updated";
+            if (rn > 0) sum.text += ", " + rn + " renewed";
+            if (sum.ignored > 0) sum.text += " · " + sum.ignored + " ignored by your settings";
             if (sum.outOfArea > 0) sum.text += " · " + sum.outOfArea + " outside your radius ignored";
             if (sum.failed > 0) sum.text += " · " + sum.failed + " search" + (sum.failed == 1 ? "" : "es") + " failed";
         }

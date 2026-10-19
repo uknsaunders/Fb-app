@@ -35,7 +35,7 @@ public class MainActivity extends Activity {
     private View dot, rowBattery, rowExact;
     private Button btnToggle, btnLogin, btnSlower;
     private Spinner spInterval, spStopAfter;
-    private LinearLayout llSearches, llFinds;
+    private LinearLayout llSearches, llFinds, llFilters;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean binding;
     private long shownCheck = -1;
@@ -74,6 +74,7 @@ public class MainActivity extends Activity {
         spStopAfter = findViewById(R.id.spStopAfter);
         llSearches = findViewById(R.id.llSearches);
         llFinds = findViewById(R.id.llFinds);
+        llFilters = findViewById(R.id.llFilters);
 
         btnToggle.setOnClickListener(v -> toggle());
         findViewById(R.id.btnCheckNow).setOnClickListener(v -> checkNow());
@@ -192,7 +193,7 @@ public class MainActivity extends Activity {
             handler.post(() -> {
                 Store.setLastCheck(app, System.currentTimeMillis());
                 Store.setLastResult(app, sum.text);
-                Notif.finds(app, sum.fresh);
+                Notif.finds(app, sum.alerts);
                 Toast.makeText(app, sum.text, Toast.LENGTH_LONG).show();
                 refreshStatus();
                 renderFinds();
@@ -367,8 +368,16 @@ public class MainActivity extends Activity {
             llFinds.addView(t);
             addDivider(llFinds);
         }
-        List<Listing> finds = Store.finds(this);
+        List<Listing> all = Store.finds(this);
+        String filter = getSharedPreferences("ui", MODE_PRIVATE).getString("findFilter", "all");
+        renderFilters(all, filter);
+        List<Listing> finds = new java.util.ArrayList<>();
+        for (Listing l : all) if (filter.equals("all") || filter.equals(l.kind)) finds.add(l);
         if (finds.isEmpty()) {
+            if (!all.isEmpty()) {
+                addEmpty(llFinds, "Nothing in this category yet.");
+                return;
+            }
             if (!stats.isEmpty()) return;
             addEmpty(llFinds, "New listings and price drops will appear here. The first check of a search only records what's already listed, so you're alerted to new ones after that.");
             return;
@@ -395,6 +404,34 @@ public class MainActivity extends Activity {
             });
             if (i > 0) addDivider(llFinds);
             llFinds.addView(row);
+        }
+    }
+
+    private static final String[][] FILTERS = {
+            {"all", "All"}, {"new", "New"}, {"drop", "Price drops"}, {"renewed", "Renewed"}, {"updated", "Title changed"}};
+
+    private void renderFilters(List<Listing> all, String current) {
+        llFilters.removeAllViews();
+        float dp = getResources().getDisplayMetrics().density;
+        for (String[] f : FILTERS) {
+            int n = 0;
+            for (Listing l : all) if (f[0].equals("all") || f[0].equals(l.kind)) n++;
+            if (n == 0 && !f[0].equals("all") && !f[0].equals(current)) continue;
+            TextView t = new TextView(this);
+            boolean on = f[0].equals(current);
+            t.setText(f[1] + " " + n);
+            t.setTextSize(14);
+            t.setTextColor(getColor(on ? R.color.on_accent : R.color.text));
+            t.setBackgroundResource(on ? R.drawable.pill_on : R.drawable.pill_off);
+            t.setPadding((int) (14 * dp), (int) (8 * dp), (int) (14 * dp), (int) (8 * dp));
+            t.setOnClickListener(v -> {
+                getSharedPreferences("ui", MODE_PRIVATE).edit().putString("findFilter", f[0]).apply();
+                renderFinds();
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            lp.setMarginEnd((int) (8 * dp));
+            llFilters.addView(t, lp);
         }
     }
 

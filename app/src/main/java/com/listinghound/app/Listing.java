@@ -20,6 +20,7 @@ public class Listing {
 
     // Only for recent finds
     public String searchName = "";
+    public String searchId = "";
     public long foundAt = 0;
     /** "new", "drop" (price lowered) or "updated" (title changed). */
     public String kind = "new";
@@ -48,6 +49,8 @@ public class Listing {
         switch (kind) {
             case "drop":
                 return "Price drop " + (oldPrice.isEmpty() ? "" : oldPrice + " → ") + p + " · " + title;
+            case "renewed":
+                return "Renewed · " + (p.isEmpty() ? "" : p + " · ") + title;
             case "updated":
                 return "Updated · " + (p.isEmpty() ? "" : p + " · ") + title;
             default:
@@ -71,6 +74,7 @@ public class Listing {
             j.put("km", km);
             j.put("image", imageUrl);
             j.put("search", searchName);
+            j.put("searchId", searchId);
             j.put("foundAt", foundAt);
             j.put("kind", kind);
             j.put("oldPrice", oldPrice);
@@ -93,6 +97,7 @@ public class Listing {
         l.km = j.optDouble("km", -1);
         l.imageUrl = j.optString("image", "");
         l.searchName = j.optString("search", "");
+        l.searchId = j.optString("searchId", "");
         l.foundAt = j.optLong("foundAt", 0);
         l.kind = j.optString("kind", "new");
         l.oldPrice = j.optString("oldPrice", "");

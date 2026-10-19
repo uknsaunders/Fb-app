@@ -165,7 +165,7 @@ public class WatchService extends Service {
         busy = false;
         Store.setLastCheck(this, System.currentTimeMillis());
         Store.setLastResult(this, sum.text);
-        Notif.finds(this, sum.fresh);
+        Notif.finds(this, sum.alerts);
 
         if (sum.loginNeeded) {
             if (!Store.loginWarned(this)) {

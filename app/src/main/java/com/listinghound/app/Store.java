@@ -221,7 +221,10 @@ public final class Store {
         List<Listing> all = finds(c);
         JSONArray a = new JSONArray();
         for (Listing l : all) {
-            if (l.key().equals(findKey)) l.listedAt = listedAt;
+            if (l.key().equals(findKey)) {
+                l.listedAt = listedAt;
+                if ("new".equals(l.kind) && listedAt > 0 && l.foundAt - listedAt > Timing.RESURFACED) l.kind = "renewed";
+            }
             a.put(l.toJson());
         }
         p(c).edit().putString("finds", a.toString()).apply();

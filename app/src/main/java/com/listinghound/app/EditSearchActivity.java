@@ -13,7 +13,8 @@ public class EditSearchActivity extends Activity {
 
     private EditText etQuery, etName, etLocation, etRadius, etMin, etMax, etInclude, etExclude;
     private Search original;
-    private Switch swDrops, swUpdates, swArea;
+    private Switch swArea;
+    private android.widget.Spinner spNew, spDrop, spRenewed, spUpdated;
 
     @Override
     protected void onCreate(Bundle b) {
@@ -28,14 +29,19 @@ public class EditSearchActivity extends Activity {
         etMax = findViewById(R.id.etMax);
         etInclude = findViewById(R.id.etInclude);
         etExclude = findViewById(R.id.etExclude);
-        swDrops = findViewById(R.id.swDrops);
-        swUpdates = findViewById(R.id.swUpdates);
+        spNew = modeSpinner(R.id.spNew);
+        spDrop = modeSpinner(R.id.spDrop);
+        spRenewed = modeSpinner(R.id.spRenewed);
+        spUpdated = modeSpinner(R.id.spUpdated);
         swArea = findViewById(R.id.swArea);
 
         String id = getIntent().getStringExtra("id");
         original = id == null ? null : Store.search(this, id);
-        swDrops.setChecked(original == null || original.alertDrops);
-        swUpdates.setChecked(original == null || original.alertUpdates);
+        Search d = original != null ? original : new Search();
+        spNew.setSelection(d.modeNew);
+        spDrop.setSelection(d.modeDrop);
+        spRenewed.setSelection(d.modeRenewed);
+        spUpdated.setSelection(d.modeUpdated);
         swArea.setChecked(original == null || original.strictArea);
 
         ((TextView) findViewById(R.id.tvHeading)).setText(original == null ? "New search" : "Edit search");
@@ -57,6 +63,15 @@ public class EditSearchActivity extends Activity {
         findViewById(R.id.btnDelete).setOnClickListener(v -> confirmDelete());
     }
 
+    private android.widget.Spinner modeSpinner(int id) {
+        android.widget.Spinner sp = findViewById(id);
+        android.widget.ArrayAdapter<String> a = new android.widget.ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, Search.MODE_LABELS);
+        a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        sp.setAdapter(a);
+        return sp;
+    }
+
     private Search fromForm() {
         Search s = new Search();
         if (original != null) {
@@ -71,8 +86,10 @@ public class EditSearchActivity extends Activity {
         s.maxPrice = num(etMax);
         s.include = etInclude.getText().toString().trim();
         s.exclude = etExclude.getText().toString().trim();
-        s.alertDrops = swDrops.isChecked();
-        s.alertUpdates = swUpdates.isChecked();
+        s.modeNew = spNew.getSelectedItemPosition();
+        s.modeDrop = spDrop.getSelectedItemPosition();
+        s.modeRenewed = spRenewed.getSelectedItemPosition();
+        s.modeUpdated = spUpdated.getSelectedItemPosition();
         s.strictArea = swArea.isChecked();
         return s;
     }

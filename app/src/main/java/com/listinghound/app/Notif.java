@@ -99,7 +99,7 @@ public final class Notif {
             if (fresh.size() > 7) inbox.setSummaryText("+" + (fresh.size() - 7) + " more in the app");
             nm.notify(ID_SUMMARY, new Notification.Builder(c, CH_FINDS)
                     .setSmallIcon(R.drawable.ic_stat)
-                    .setContentTitle(fresh.size() + " new or changed listings")
+                    .setContentTitle(fresh.size() + " listings to look at")
                     .setContentText(line(fresh.get(0)))
                     .setStyle(inbox)
                     .setAutoCancel(true)

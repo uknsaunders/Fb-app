@@ -41,6 +41,10 @@ public final class Timing {
 
     /** Explanation for one new-listing find, or "" if there isn't enough information. */
     public static String explain(Context c, Listing l) {
+        if ("renewed".equals(l.kind) && l.listedAt > 0) {
+            return "First listed " + when(c, l.listedAt, l.foundAt) + " · bumped back up, seen " + Notif.time(c, l.foundAt)
+                    + "\nStill unsold after " + mins(l.foundAt - l.listedAt) + " — seller may take an offer";
+        }
         if (!"new".equals(l.kind) || l.listedAt <= 0) return "";
         long total = l.foundAt - l.listedAt;
         StringBuilder b = new StringBuilder();
@@ -78,6 +82,10 @@ public final class Timing {
         int n = 0, held = 0, old = 0;
         long totalSum = 0, fbSum = 0, appSum = 0;
         for (Listing l : finds) {
+            if ("renewed".equals(l.kind)) {
+                old++;
+                continue;
+            }
             if (!"new".equals(l.kind) || l.listedAt <= 0 || l.prevCheckAt <= 0) continue;
             if (resurfaced(l)) {
                 old++;
@@ -106,7 +114,7 @@ public final class Timing {
         if (old > 0) {
             if (b.length() > 0) b.append('\n');
             b.append(old).append(" older listing").append(old == 1 ? "" : "s")
-                    .append(" that resurfaced left out of these figures.");
+                    .append(" renewed by sellers left out of these figures.");
         }
 
         // How often checks ran on time in the last 24 hours
