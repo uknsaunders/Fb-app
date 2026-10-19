@@ -35,7 +35,8 @@ public class MainActivity extends Activity {
     private View dot, rowBattery, rowExact;
     private Button btnToggle, btnLogin, btnSlower;
     private Spinner spInterval, spStopAfter;
-    private LinearLayout llSearches, llFinds, llFilters;
+    private LinearLayout llSearches, llFinds, llFilters, llDeals;
+    private final Runnable dealsChanged = this::renderDeals;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean binding;
     private long shownCheck = -1;
@@ -75,6 +76,14 @@ public class MainActivity extends Activity {
         llSearches = findViewById(R.id.llSearches);
         llFinds = findViewById(R.id.llFinds);
         llFilters = findViewById(R.id.llFilters);
+        llDeals = findViewById(R.id.llDeals);
+        findViewById(R.id.btnDealsNow).setOnClickListener(v -> {
+            Deals.runNow(this);
+            Toast.makeText(this, "Checking for deals in the background…", Toast.LENGTH_SHORT).show();
+        });
+        findViewById(R.id.btnDealsSettings).setOnClickListener(v ->
+                startActivity(new Intent(this, DealsSettingsActivity.class)));
+        Deals.schedule(this);
 
         btnToggle.setOnClickListener(v -> toggle());
         findViewById(R.id.btnCheckNow).setOnClickListener(v -> checkNow());
@@ -116,11 +125,25 @@ public class MainActivity extends Activity {
         refreshLogin();
         refreshBattery();
         backfillListingTimes();
+        Deals.listeners.add(dealsChanged);
+        renderDeals();
+        if (getIntent().getBooleanExtra("showDeals", false)) {
+            getIntent().removeExtra("showDeals");
+            findViewById(R.id.scroll).post(() -> ((android.widget.ScrollView) findViewById(R.id.scroll))
+                    .smoothScrollTo(0, findViewById(R.id.dealsHeader).getTop()));
+        }
         handler.post(ticker);
     }
 
     @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+    }
+
+    @Override
     protected void onPause() {
+        Deals.listeners.remove(dealsChanged);
         handler.removeCallbacks(ticker);
         super.onPause();
     }
@@ -404,6 +427,52 @@ public class MainActivity extends Activity {
             });
             if (i > 0) addDivider(llFinds);
             llFinds.addView(row);
+        }
+    }
+
+    private void renderDeals() {
+        llDeals.removeAllViews();
+        StringBuilder st = new StringBuilder();
+        if (Deals.scanning) {
+            st.append("Checking for deals…");
+        } else {
+            long last = Deals.lastScan(this);
+            if (last > 0) {
+                st.append("Last checked ").append(Timing.when(this, last, System.currentTimeMillis()))
+                        .append(" — ").append(Deals.lastScanNote(this));
+            } else {
+                st.append("No deals check yet. Tap “Check now”, or wait for the daily check.");
+            }
+            long next = Deals.nextScan(this);
+            st.append(next > 0 ? "\nNext daily check " + Timing.when(this, next, System.currentTimeMillis())
+                    + " · alerts at DealRank " + Deals.minScore(this) + "+" : "\nDaily check is off");
+        }
+        TextView status = new TextView(this);
+        status.setText(st.toString());
+        status.setTextColor(getColor(R.color.subtext));
+        status.setTextSize(13);
+        int p = (int) (10 * getResources().getDisplayMetrics().density);
+        status.setPadding(0, p, 0, p);
+        llDeals.addView(status);
+
+        List<Listing> deals = Deals.results(this);
+        LayoutInflater inf = getLayoutInflater();
+        int shown = 0;
+        for (Listing l : deals) {
+            if (shown >= 10) break;
+            addDivider(llDeals);
+            View row = inf.inflate(R.layout.item_row, llDeals, false);
+            ((TextView) row.findViewById(R.id.title)).setText(l.score + " · "
+                    + (l.priceOrBlank().isEmpty() ? "" : l.price + " · ") + l.title);
+            StringBuilder sub = new StringBuilder();
+            if (!l.reasons.isEmpty()) sub.append(l.reasons).append('\n');
+            sub.append(l.searchName);
+            if (!l.city.isEmpty()) sub.append(" · ").append(l.city);
+            if (l.km >= 0) sub.append(" (").append(Math.round(l.km)).append(" km)");
+            ((TextView) row.findViewById(R.id.sub)).setText(sub.toString());
+            row.setOnClickListener(v -> startActivity(ListingViewActivity.intent(this, l)));
+            llDeals.addView(row);
+            shown++;
         }
     }
 

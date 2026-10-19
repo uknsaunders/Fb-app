@@ -31,6 +31,13 @@ public class Listing {
     /** The search's previous successful check before this one spotted it; 0 = unknown. */
     public long prevCheckAt = 0;
 
+    // Deals only
+    public int score = 0;
+    public String reasons = "";
+    public boolean outside = false;
+    /** Typical (median) price for the search when it was scored; -1 = unknown. */
+    public double typical = -1;
+
     /** Thumbnail for the notification; never stored. */
     public transient Bitmap thumb;
 
@@ -81,6 +88,10 @@ public class Listing {
             j.put("oldTitle", oldTitle);
             j.put("listedAt", listedAt);
             j.put("prevCheckAt", prevCheckAt);
+            j.put("score", score);
+            j.put("reasons", reasons);
+            j.put("outside", outside);
+            j.put("typical", typical);
         } catch (JSONException ignored) {
         }
         return j;
@@ -104,6 +115,10 @@ public class Listing {
         l.oldTitle = j.optString("oldTitle", "");
         l.listedAt = j.optLong("listedAt", 0);
         l.prevCheckAt = j.optLong("prevCheckAt", 0);
+        l.score = j.optInt("score", 0);
+        l.reasons = j.optString("reasons", "");
+        l.outside = j.optBoolean("outside", false);
+        l.typical = j.optDouble("typical", -1);
         return l;
     }
 }

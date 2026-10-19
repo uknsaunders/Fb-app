@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -40,6 +41,29 @@
         <activity
             android:name=".LoginActivity"
             android:exported="false" />
+
+        <receiver
+            android:name=".DealsReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".DealsService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Runs the user's requested daily scan of their saved marketplace searches" />
+        </service>
+
+        <activity
+            android:name=".DealsSettingsActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
 
         <receiver
             android:name=".AlarmReceiver"

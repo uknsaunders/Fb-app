@@ -48,6 +48,10 @@ public final class Fetcher {
     }
 
     public static String buildUrl(Search s) {
+        return buildUrl(s, "creation_time_descend", s.radiusKm);
+    }
+
+    public static String buildUrl(Search s, String sort, int radiusKm) {
         StringBuilder u = new StringBuilder(FB).append("/marketplace/");
         String loc = s.location.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_\\-]", "");
         if (!loc.isEmpty()) u.append(loc).append('/');
@@ -58,10 +62,10 @@ public final class Fetcher {
             q = s.query.trim();
         }
         u.append("search?query=").append(q);
-        u.append("&sortBy=creation_time_descend&exact=false");
+        u.append("&sortBy=").append(sort).append("&exact=false");
         if (s.minPrice > 0) u.append("&minPrice=").append(s.minPrice);
         if (s.maxPrice > 0) u.append("&maxPrice=").append(s.maxPrice);
-        if (s.radiusKm > 0) u.append("&radius=").append(s.radiusKm);
+        if (radiusKm > 0) u.append("&radius=").append(radiusKm);
         return u.toString();
     }
 
@@ -95,9 +99,13 @@ public final class Fetcher {
             .build();
 
     public static Result fetch(Search s) {
+        return fetchUrl(buildUrl(s));
+    }
+
+    public static Result fetchUrl(String pageUrl) {
         Result r = new Result();
         Request.Builder rb = new Request.Builder()
-                .url(buildUrl(s))
+                .url(pageUrl)
                 .header("User-Agent", UA)
                 .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                 .header("Accept-Language", "en-GB,en;q=0.9")

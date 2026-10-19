@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
@@ -200,6 +201,40 @@
                     android:text="Allow" />
             </LinearLayout>
         </LinearLayout>
+
+        <!-- Deals -->
+        <LinearLayout
+            android:id="@+id/dealsHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/SectionTitle"
+                android:text="Deals · DealRank" />
+
+            <Button
+                android:id="@+id/btnDealsNow"
+                style="@style/TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Check now" />
+
+            <Button
+                android:id="@+id/btnDealsSettings"
+                style="@style/TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Settings" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llDeals"
+            style="@style/Card"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp" />
 
         <!-- Searches -->
         <LinearLayout
