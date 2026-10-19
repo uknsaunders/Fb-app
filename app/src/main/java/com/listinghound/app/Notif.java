@@ -109,9 +109,10 @@ public final class Notif {
         }
 
         for (Listing l : fresh) {
-            Intent view = new Intent(Intent.ACTION_VIEW, Uri.parse(l.url()));
-            PendingIntent pi = PendingIntent.getActivity(c, l.key().hashCode(), view,
-                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingIntent pi = android.app.TaskStackBuilder.create(c)
+                    .addNextIntentWithParentStack(ListingViewActivity.intent(c, l))
+                    .getPendingIntent(l.key().hashCode(),
+                            PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
             String title = l.headline();
             String text = l.searchName + (l.city.isEmpty() ? "" : " · " + l.city)
                     + (l.km >= 0 ? " (" + Math.round(l.km) + " km)" : "");

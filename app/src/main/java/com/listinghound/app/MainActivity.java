@@ -379,12 +379,12 @@ public class MainActivity extends Activity {
             View row = inf.inflate(R.layout.item_row, llFinds, false);
             ((TextView) row.findViewById(R.id.title)).setText(l.headline());
             ((TextView) row.findViewById(R.id.sub)).setText(findDetail(l));
-            row.setOnClickListener(v -> open(l.url()));
+            row.setOnClickListener(v -> startActivity(ListingViewActivity.intent(this, l)));
             row.setOnLongClickListener(v -> {
                 new AlertDialog.Builder(this)
                         .setTitle(l.headline())
                         .setItems(new String[]{"Open listing", "Remove from list", "Check listing time (diagnostic)"}, (d, which) -> {
-                            if (which == 0) open(l.url());
+                            if (which == 0) startActivity(ListingViewActivity.intent(this, l));
                             else if (which == 1) {
                                 Store.removeFind(this, l.key());
                                 renderFinds();

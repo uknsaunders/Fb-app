@@ -32,6 +32,12 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".ListingViewActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" />
+
+        <activity
             android:name=".LoginActivity"
             android:exported="false" />
 
