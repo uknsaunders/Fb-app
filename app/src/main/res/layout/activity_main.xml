@@ -73,6 +73,20 @@
                 android:textColor="@color/subtext"
                 android:textSize="14sp" />
 
+            <TextView
+                android:id="@+id/tvStats"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/soft_box"
+                android:lineSpacingMultiplier="1.15"
+                android:paddingStart="12dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="8dp"
+                android:textColor="@color/text"
+                android:textSize="14sp" />
+
             <Button
                 android:id="@+id/btnToggle"
                 style="@style/PrimaryButton"
@@ -116,7 +130,7 @@
             <TextView android:id="@+id/tabSetup" style="@style/Tab" android:text="Set-up" />
             <TextView android:id="@+id/tabSearches" style="@style/Tab" android:text="Searches" />
             <TextView android:id="@+id/tabDeals" style="@style/Tab" android:text="DealRank" />
-            <TextView android:id="@+id/tabFinds" style="@style/Tab" android:text="Finds" />
+            <TextView android:id="@+id/tabFinds" style="@style/Tab" android:text="Latest" />
         </LinearLayout>
 
         <LinearLayout
@@ -318,7 +332,7 @@
 
                 <TextView
                     style="@style/SectionTitle"
-                    android:text="Recent finds" />
+                    android:text="Latest" />
 
                 <Button
                     android:id="@+id/btnTidy"

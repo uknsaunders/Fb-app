@@ -139,4 +139,45 @@ public final class Timing {
         }
         return b.toString();
     }
+
+    /** One-glance figures for the top of the app. */
+    public static String headline(Context c) {
+        List<Listing> finds = Store.finds(c);
+        int n = 0;
+        long sum = 0;
+        long dayAgo = System.currentTimeMillis() - DAY;
+        int newToday = 0, dropsToday = 0;
+        for (Listing l : finds) {
+            if (l.foundAt >= dayAgo) {
+                if ("new".equals(l.kind)) newToday++;
+                else if ("drop".equals(l.kind)) dropsToday++;
+            }
+            if (!"new".equals(l.kind) || l.listedAt <= 0 || n >= 20) continue;
+            if (resurfaced(l)) continue;
+            n++;
+            sum += Math.max(0, l.foundAt - l.listedAt);
+        }
+        StringBuilder b = new StringBuilder();
+        if (n > 0) {
+            b.append("Average find time for new listings: ").append(mins(sum / n))
+                    .append(" (last ").append(n).append(")");
+        } else {
+            b.append("Average find time for new listings: not enough data yet");
+        }
+        b.append("\nLast 24 h: ").append(newToday).append(" new · ").append(dropsToday)
+                .append(" price drop").append(dropsToday == 1 ? "" : "s");
+        // How often checks ran on time
+        List<Long> times = Store.checkTimes(c);
+        long allowed = Store.intervalMin(c) * 60_000L * 3 / 2 + 60_000L;
+        int gaps = 0, late = 0;
+        for (int i = 1; i < times.size(); i++) {
+            if (times.get(i) < dayAgo) continue;
+            long gap = times.get(i) - times.get(i - 1);
+            if (gap > 3 * 3600_000L) continue;
+            gaps++;
+            if (gap > allowed) late++;
+        }
+        if (gaps >= 3) b.append(" · checks on time ").append(Math.round(100f * (gaps - late) / gaps)).append('%');
+        return b.toString();
+    }
 }

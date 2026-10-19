@@ -31,7 +31,7 @@ import java.util.List;
 
 public class MainActivity extends Activity {
 
-    private TextView tvState, tvDetail, tvLogin;
+    private TextView tvState, tvDetail, tvLogin, tvStats;
     private View dot, rowBattery, rowExact;
     private Button btnToggle, btnLogin, btnSlower;
     private Spinner spInterval, spStopAfter;
@@ -65,6 +65,7 @@ public class MainActivity extends Activity {
         tvState = findViewById(R.id.tvState);
         tvDetail = findViewById(R.id.tvDetail);
         tvLogin = findViewById(R.id.tvLogin);
+        tvStats = findViewById(R.id.tvStats);
         dot = findViewById(R.id.dot);
         rowBattery = findViewById(R.id.rowBattery);
         rowExact = findViewById(R.id.rowExact);
@@ -378,6 +379,7 @@ public class MainActivity extends Activity {
     }
 
     private void renderFinds() {
+        tvStats.setText(Timing.headline(this));
         llFinds.removeAllViews();
         String stats = Timing.summary(this);
         if (!stats.isEmpty()) {
@@ -439,6 +441,16 @@ public class MainActivity extends Activity {
             String k = TAB_KEYS[i];
             findViewById(TAB_IDS[i]).setOnClickListener(v -> showTab(k));
         }
+        intro(R.id.secSetup, "How often Listing Hound checks Facebook, and when it stops by itself. "
+                + "Log in to Facebook here, and allow battery and alarm access so checks keep running while your phone sleeps.");
+        intro(R.id.secSearches, "What you're looking for. Each search has its own area, price range and words to include or skip. "
+                + "You choose what you're told about: new listings, price drops, renewed listings and title changes. "
+                + "Tap a search to change it; use its switch to pause it.");
+        intro(R.id.secDeals, "Once a day Listing Hound scores what's for sale now from 0 to 100: price against the typical price, "
+                + "reductions, how long it's been unsold, how new it is and how far away. "
+                + "High scores send a “Consider this” alert. Settings changes what counts.");
+        intro(R.id.secFinds, "Everything the watcher has spotted since it started, newest first. "
+                + "Use the buttons to show one kind. Tap to open, long-press to remove; Tidy removes anything outside your radius.");
         // Deal settings also live under Set-up, so all settings are in one place
         LinearLayout setup = findViewById(R.id.secSetup);
         Button ds = new Button(this, null, 0, R.style.TextButton);
@@ -449,6 +461,18 @@ public class MainActivity extends Activity {
         String saved = getSharedPreferences("ui", MODE_PRIVATE).getString("tab", null);
         if (saved == null) saved = Store.searches(this).isEmpty() ? "searches" : "finds";
         showTab(saved);
+    }
+
+    private void intro(int sectionId, String text) {
+        LinearLayout sec = findViewById(sectionId);
+        TextView t = new TextView(this);
+        t.setText(text);
+        t.setTextColor(getColor(R.color.subtext));
+        t.setTextSize(14);
+        t.setLineSpacing(0, 1.15f);
+        int p = (int) (4 * getResources().getDisplayMetrics().density);
+        t.setPadding(p, 0, p, p * 3);
+        sec.addView(t, 0);
     }
 
     private void showTab(String key) {
