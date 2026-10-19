@@ -103,209 +103,257 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Timing -->
-        <LinearLayout style="@style/Card">
+        <!-- Tabs -->
+        <LinearLayout
+            android:id="@+id/tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/pill_off"
+            android:orientation="horizontal"
+            android:padding="4dp">
 
-            <TextView
-                style="@style/Label"
-                android:layout_marginTop="0dp"
-                android:text="Check every" />
-
-            <Spinner
-                android:id="@+id/spInterval"
-                android:layout_width="match_parent"
-                android:layout_height="48dp" />
-
-            <TextView
-                style="@style/Label"
-                android:text="Stop automatically after" />
-
-            <Spinner
-                android:id="@+id/spStopAfter"
-                android:layout_width="match_parent"
-                android:layout_height="48dp" />
+            <TextView android:id="@+id/tabSetup" style="@style/Tab" android:text="Set-up" />
+            <TextView android:id="@+id/tabSearches" style="@style/Tab" android:text="Searches" />
+            <TextView android:id="@+id/tabDeals" style="@style/Tab" android:text="DealRank" />
+            <TextView android:id="@+id/tabFinds" style="@style/Tab" android:text="Finds" />
         </LinearLayout>
 
-        <!-- Facebook + battery -->
-        <LinearLayout style="@style/Card">
+        <LinearLayout
+            android:id="@+id/secSetup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
+            <!-- Timing -->
+            <LinearLayout style="@style/Card">
+
+                <TextView
+                    style="@style/Label"
+                    android:layout_marginTop="0dp"
+                    android:text="Check every" />
+
+                <Spinner
+                    android:id="@+id/spInterval"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp" />
+
+                <TextView
+                    style="@style/Label"
+                    android:text="Stop automatically after" />
+
+                <Spinner
+                    android:id="@+id/spStopAfter"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp" />
+            </LinearLayout>
+
+            <!-- Facebook + battery -->
+            <LinearLayout style="@style/Card">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvLogin"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/text"
+                        android:textSize="15sp" />
+
+                    <Button
+                        android:id="@+id/btnLogin"
+                        style="@style/TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/rowBattery"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Battery saving is pausing checks when the screen is off. Tap Allow, then choose Unrestricted / Allow."
+                        android:textColor="@color/subtext"
+                        android:textSize="14sp" />
+
+                    <Button
+                        android:id="@+id/btnBattery"
+                        style="@style/TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Allow" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/rowExact"
+                style="@style/Card">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Checks can drift by up to 15 min while the phone sleeps. Allow alarms for on-time checks."
+                        android:textColor="@color/subtext"
+                        android:textSize="14sp" />
+
+                    <Button
+                        android:id="@+id/btnExact"
+                        style="@style/TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Allow" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/secSearches"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Searches -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/tvLogin"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textColor="@color/text"
-                    android:textSize="15sp" />
+                    style="@style/SectionTitle"
+                    android:text="Searches" />
 
                 <Button
-                    android:id="@+id/btnLogin"
+                    android:id="@+id/btnAdd"
                     style="@style/TextButton"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:text="+ Add search" />
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/rowBattery"
+                android:id="@+id/llSearches"
+                style="@style/Card"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/secDeals"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Deals -->
+            <LinearLayout
+                android:id="@+id/dealsHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="8dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Battery saving is pausing checks when the screen is off. Tap Allow, then choose Unrestricted / Allow."
-                    android:textColor="@color/subtext"
-                    android:textSize="14sp" />
+                    style="@style/SectionTitle"
+                    android:text="Deals · DealRank" />
 
                 <Button
-                    android:id="@+id/btnBattery"
+                    android:id="@+id/btnDealsNow"
                     style="@style/TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Allow" />
+                    android:text="Check now" />
+
+                <Button
+                    android:id="@+id/btnDealsSettings"
+                    style="@style/TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Settings" />
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llDeals"
+                style="@style/Card"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
+
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/rowExact"
-            style="@style/Card">
+            android:id="@+id/secFinds"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
+            <!-- Finds -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Checks can drift by up to 15 min while the phone sleeps. Allow alarms for on-time checks."
-                    android:textColor="@color/subtext"
-                    android:textSize="14sp" />
+                    style="@style/SectionTitle"
+                    android:text="Recent finds" />
 
                 <Button
-                    android:id="@+id/btnExact"
+                    android:id="@+id/btnTidy"
                     style="@style/TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Allow" />
+                    android:text="Tidy" />
+
+                <Button
+                    android:id="@+id/btnClear"
+                    style="@style/TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Clear" />
             </LinearLayout>
-        </LinearLayout>
 
-        <!-- Deals -->
-        <LinearLayout
-            android:id="@+id/dealsHeader"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                style="@style/SectionTitle"
-                android:text="Deals · DealRank" />
-
-            <Button
-                android:id="@+id/btnDealsNow"
-                style="@style/TextButton"
-                android:layout_width="wrap_content"
+            <HorizontalScrollView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Check now" />
+                android:layout_marginBottom="8dp"
+                android:scrollbars="none">
 
-            <Button
-                android:id="@+id/btnDealsSettings"
-                style="@style/TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Settings" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/llDeals"
-            style="@style/Card"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp" />
-
-        <!-- Searches -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                style="@style/SectionTitle"
-                android:text="Searches" />
-
-            <Button
-                android:id="@+id/btnAdd"
-                style="@style/TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="+ Add search" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/llSearches"
-            style="@style/Card"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp" />
-
-        <!-- Finds -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                style="@style/SectionTitle"
-                android:text="Recent finds" />
-
-            <Button
-                android:id="@+id/btnTidy"
-                style="@style/TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Tidy" />
-
-            <Button
-                android:id="@+id/btnClear"
-                style="@style/TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Clear" />
-        </LinearLayout>
-
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:scrollbars="none">
+                <LinearLayout
+                    android:id="@+id/llFilters"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
 
             <LinearLayout
-                android:id="@+id/llFilters"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-        </HorizontalScrollView>
+                android:id="@+id/llFinds"
+                style="@style/Card"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
+        </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/llFinds"
-            style="@style/Card"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp" />
     </LinearLayout>
 </ScrollView>

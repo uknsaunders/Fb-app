@@ -84,6 +84,7 @@ public class MainActivity extends Activity {
         findViewById(R.id.btnDealsSettings).setOnClickListener(v ->
                 startActivity(new Intent(this, DealsSettingsActivity.class)));
         Deals.schedule(this);
+        setupTabs();
 
         btnToggle.setOnClickListener(v -> toggle());
         findViewById(R.id.btnCheckNow).setOnClickListener(v -> checkNow());
@@ -129,8 +130,7 @@ public class MainActivity extends Activity {
         renderDeals();
         if (getIntent().getBooleanExtra("showDeals", false)) {
             getIntent().removeExtra("showDeals");
-            findViewById(R.id.scroll).post(() -> ((android.widget.ScrollView) findViewById(R.id.scroll))
-                    .smoothScrollTo(0, findViewById(R.id.dealsHeader).getTop()));
+            showTab("deals");
         }
         handler.post(ticker);
     }
@@ -427,6 +427,39 @@ public class MainActivity extends Activity {
             });
             if (i > 0) addDivider(llFinds);
             llFinds.addView(row);
+        }
+    }
+
+    private static final String[] TAB_KEYS = {"setup", "searches", "deals", "finds"};
+    private static final int[] TAB_IDS = {R.id.tabSetup, R.id.tabSearches, R.id.tabDeals, R.id.tabFinds};
+    private static final int[] SEC_IDS = {R.id.secSetup, R.id.secSearches, R.id.secDeals, R.id.secFinds};
+
+    private void setupTabs() {
+        for (int i = 0; i < TAB_KEYS.length; i++) {
+            String k = TAB_KEYS[i];
+            findViewById(TAB_IDS[i]).setOnClickListener(v -> showTab(k));
+        }
+        // Deal settings also live under Set-up, so all settings are in one place
+        LinearLayout setup = findViewById(R.id.secSetup);
+        Button ds = new Button(this, null, 0, R.style.TextButton);
+        ds.setText("DealRank settings ›");
+        ds.setOnClickListener(v -> startActivity(new Intent(this, DealsSettingsActivity.class)));
+        setup.addView(ds);
+
+        String saved = getSharedPreferences("ui", MODE_PRIVATE).getString("tab", null);
+        if (saved == null) saved = Store.searches(this).isEmpty() ? "searches" : "finds";
+        showTab(saved);
+    }
+
+    private void showTab(String key) {
+        getSharedPreferences("ui", MODE_PRIVATE).edit().putString("tab", key).apply();
+        for (int i = 0; i < TAB_KEYS.length; i++) {
+            boolean on = TAB_KEYS[i].equals(key);
+            findViewById(SEC_IDS[i]).setVisibility(on ? View.VISIBLE : View.GONE);
+            TextView t = findViewById(TAB_IDS[i]);
+            t.setBackgroundResource(on ? R.drawable.pill_on : 0);
+            t.setTextColor(getColor(on ? R.color.on_accent : R.color.text));
+            t.setTypeface(null, on ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
         }
     }
 
