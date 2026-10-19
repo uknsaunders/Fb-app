@@ -422,9 +422,16 @@ public class MainActivity extends Activity {
     /** Finds saved before listing times were recorded, or whose lookup hasn't run yet. */
     private void backfillListingTimes() {
         if (backfilling) return;
+        android.content.SharedPreferences fx = getSharedPreferences("fixes", MODE_PRIVATE);
+        if (!fx.getBoolean("listedAtV2", false)) {
+            List<Listing> all = Store.finds(this);
+            for (Listing l : all) if ("new".equals(l.kind)) l.listedAt = 0;
+            Store.saveFinds(this, all);
+            fx.edit().putBoolean("listedAtV2", true).apply();
+        }
         List<Listing> todo = new java.util.ArrayList<>();
         for (Listing l : Store.finds(this)) {
-            if ("new".equals(l.kind) && l.listedAt == 0 && todo.size() < 5) todo.add(l);
+            if ("new".equals(l.kind) && l.listedAt == 0 && todo.size() < 20) todo.add(l);
         }
         if (todo.isEmpty()) return;
         backfilling = true;

@@ -284,18 +284,27 @@ public final class Fetcher {
             ResponseBody body = resp.body();
             if (!resp.isSuccessful() || body == null) return -1;
             String html = read(body.byteStream());
-            // Prefer the timestamp closest after this listing's own ID
-            int at = html.indexOf("\"id\":\"" + id + "\"");
-            Matcher m = CREATED.matcher(html);
+            // Only trust a timestamp sitting right next to this listing's own ID.
+            // The page also holds other listings (seller's items, suggestions) with their own times.
+            String idKey = "\"id\":\"" + id + "\"";
             long best = -1;
             int bestDist = Integer.MAX_VALUE;
-            while (m.find()) {
-                int dist = at < 0 ? m.start() : Math.abs(m.start() - at);
-                if (dist < bestDist) {
-                    bestDist = dist;
-                    best = Long.parseLong(m.group(1)) * 1000L;
+            int from = 0;
+            while (true) {
+                int at = html.indexOf(idKey, from);
+                if (at < 0) break;
+                from = at + idKey.length();
+                int lo = Math.max(0, at - 1500), hi = Math.min(html.length(), at + 1500);
+                Matcher m = CREATED.matcher(html.substring(lo, hi));
+                while (m.find()) {
+                    int dist = Math.abs(lo + m.start() - at);
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        best = Long.parseLong(m.group(1)) * 1000L;
+                    }
                 }
             }
+            if (best > System.currentTimeMillis() + 3600_000L) return -1;
             return best;
         } catch (Exception e) {
             return -1;
