@@ -266,49 +266,152 @@ public final class Fetcher {
         }
     }
 
-    private static final Pattern CREATED = Pattern.compile("\"creation_time\":(\\d{10})");
+    static final String[] TIME_KEYS = {"creation_time", "created_time", "listing_time", "publish_time", "time_created", "creation_timestamp"};
 
-    /** When a listing was posted, read from its own page. Returns ms, or -1 if it can't be found. */
-    public static long listedAt(String id) {
+    private static String fetchItemPage(String id, int[] codeOut, String[] urlOut) throws Exception {
         Request.Builder rb = new Request.Builder()
                 .url(FB + "/marketplace/item/" + id + "/")
                 .header("User-Agent", UA)
                 .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                .header("Accept-Language", "en-GB,en;q=0.9");
+                .header("Accept-Language", "en-GB,en;q=0.9")
+                .header("Sec-Fetch-Dest", "document")
+                .header("Sec-Fetch-Mode", "navigate")
+                .header("Sec-Fetch-Site", "none");
         try {
             String cookie = CookieManager.getInstance().getCookie(FB);
             if (cookie != null && !cookie.isEmpty()) rb.header("Cookie", cookie);
         } catch (Throwable ignored) {
         }
         try (Response resp = CLIENT.newCall(rb.build()).execute()) {
+            if (codeOut != null) codeOut[0] = resp.code();
+            if (urlOut != null) urlOut[0] = resp.request().url().toString();
             ResponseBody body = resp.body();
-            if (!resp.isSuccessful() || body == null) return -1;
-            String html = read(body.byteStream());
-            // Only trust a timestamp sitting right next to this listing's own ID.
-            // The page also holds other listings (seller's items, suggestions) with their own times.
-            String idKey = "\"id\":\"" + id + "\"";
-            long best = -1;
-            int bestDist = Integer.MAX_VALUE;
-            int from = 0;
-            while (true) {
-                int at = html.indexOf(idKey, from);
-                if (at < 0) break;
-                from = at + idKey.length();
-                int lo = Math.max(0, at - 1500), hi = Math.min(html.length(), at + 1500);
-                Matcher m = CREATED.matcher(html.substring(lo, hi));
-                while (m.find()) {
-                    int dist = Math.abs(lo + m.start() - at);
-                    if (dist < bestDist) {
-                        bestDist = dist;
-                        best = Long.parseLong(m.group(1)) * 1000L;
-                    }
-                }
+            if (!resp.isSuccessful() || body == null) return null;
+            return read(body.byteStream());
+        }
+    }
+
+    /** Looks inside the page's data for the object that IS this listing, then for a time field within it. */
+    private static long timeFromStructure(String html, String id) {
+        Matcher m = SCRIPT.matcher(html);
+        while (m.find()) {
+            String js = m.group(1);
+            if (js == null || !js.contains(id)) continue;
+            try {
+                long t = findListingTime(new JSONTokener(js).nextValue(), id, 0);
+                if (t > 0) return t;
+            } catch (Throwable ignored) {
             }
-            if (best > System.currentTimeMillis() + 3600_000L) return -1;
-            return best;
+        }
+        return -1;
+    }
+
+    private static long findListingTime(Object o, String id, int depth) {
+        if (o == null || depth > 220) return -1;
+        if (o instanceof JSONObject) {
+            JSONObject j = (JSONObject) o;
+            if (id.equals(j.optString("id", null))) {
+                long t = timeIn(j, 0);
+                if (t > 0) return t;
+            }
+            Iterator<String> keys = j.keys();
+            while (keys.hasNext()) {
+                long t = findListingTime(j.opt(keys.next()), id, depth + 1);
+                if (t > 0) return t;
+            }
+        } else if (o instanceof JSONArray) {
+            JSONArray a = (JSONArray) o;
+            for (int i = 0; i < a.length(); i++) {
+                long t = findListingTime(a.opt(i), id, depth + 1);
+                if (t > 0) return t;
+            }
+        }
+        return -1;
+    }
+
+    /** A time field on this object or a few levels inside it (not inside other listings). */
+    private static long timeIn(JSONObject j, int depth) {
+        for (String k : TIME_KEYS) {
+            long v = j.optLong(k, 0);
+            if (v > 1_000_000_000L && v < 10_000_000_000L) return v * 1000L;
+        }
+        if (depth >= 3) return -1;
+        Iterator<String> keys = j.keys();
+        while (keys.hasNext()) {
+            Object v = j.opt(keys.next());
+            if (v instanceof JSONObject) {
+                JSONObject c = (JSONObject) v;
+                String cid = c.optString("id", "");
+                if (!cid.isEmpty() && cid.matches("\\d{8,}")) continue; // a different listing
+                long t = timeIn(c, depth + 1);
+                if (t > 0) return t;
+            }
+        }
+        return -1;
+    }
+
+    /** When a listing was posted. Returns ms, or -1 if it can't be found reliably. */
+    public static long listedAt(String id) {
+        try {
+            String html = fetchItemPage(id, null, null);
+            if (html == null) return -1;
+            long t = timeFromStructure(html, id);
+            if (t > System.currentTimeMillis() + 3600_000L) return -1;
+            return t;
         } catch (Exception e) {
             return -1;
         }
+    }
+
+    /** Plain-English report of what Facebook's page for this listing contains, for troubleshooting. */
+    public static String diagnose(String id) {
+        StringBuilder b = new StringBuilder();
+        int[] code = {0};
+        String[] url = {""};
+        String html;
+        try {
+            html = fetchItemPage(id, code, url);
+        } catch (Exception e) {
+            return "Couldn't load the listing page: " + e.getClass().getSimpleName();
+        }
+        b.append("Page: HTTP ").append(code[0]);
+        if (html == null) return b.append(" (no page)").toString();
+        b.append(", ").append(html.length() / 1024).append(" KB\n");
+        String u = url[0];
+        if (u.contains("/login") || u.contains("/checkpoint")) b.append("Redirected to a login page\n");
+        String idKey = "\"id\":\"" + id + "\"";
+        int idCount = 0;
+        for (int i = html.indexOf(idKey); i >= 0; i = html.indexOf(idKey, i + 1)) idCount++;
+        b.append("Listing ID on page: ").append(idCount).append(" times");
+        b.append(" · plain mentions: ").append(html.split(id, -1).length - 1).append('\n');
+        b.append("Has listing title: ").append(html.contains("marketplace_listing_title") ? "yes" : "no").append('\n');
+        int first = html.indexOf(idKey);
+        for (String k : TIME_KEYS) {
+            Matcher m = Pattern.compile("\"" + k + "\":(\\d{10})").matcher(html);
+            int n = 0, bestD = Integer.MAX_VALUE;
+            long bestV = 0;
+            while (m.find()) {
+                n++;
+                int d = first < 0 ? Integer.MAX_VALUE : Math.abs(m.start() - first);
+                if (bestV == 0 || d < bestD) {
+                    bestD = d;
+                    bestV = Long.parseLong(m.group(1));
+                }
+            }
+            if (n == 0) continue;
+            b.append(k).append(": ").append(n).append(" found, nearest ")
+                    .append(java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT)
+                            .format(new java.util.Date(bestV * 1000L)));
+            if (bestD != Integer.MAX_VALUE) b.append(" (").append(bestD).append(" chars from ID)");
+            b.append('\n');
+        }
+        Matcher rel = Pattern.compile("[Ll]isted ([^\"<]{1,40}?) ago").matcher(html);
+        if (rel.find()) b.append("Page text: “Listed ").append(rel.group(1)).append(" ago”\n");
+        long t = timeFromStructure(html, id);
+        b.append("Structured lookup result: ").append(t > 0
+                ? java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT).format(new java.util.Date(t))
+                : "not found");
+        return b.toString();
     }
 
     /** Small thumbnail for a notification; null on any failure. */

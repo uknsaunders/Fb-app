@@ -382,13 +382,14 @@ public class MainActivity extends Activity {
             row.setOnClickListener(v -> open(l.url()));
             row.setOnLongClickListener(v -> {
                 new AlertDialog.Builder(this)
-                        .setTitle("Remove from list?")
-                        .setMessage(l.headline())
-                        .setPositiveButton("Remove", (d, w) -> {
-                            Store.removeFind(this, l.key());
-                            renderFinds();
+                        .setTitle(l.headline())
+                        .setItems(new String[]{"Open listing", "Remove from list", "Check listing time (diagnostic)"}, (d, which) -> {
+                            if (which == 0) open(l.url());
+                            else if (which == 1) {
+                                Store.removeFind(this, l.key());
+                                renderFinds();
+                            } else diagnose(l);
                         })
-                        .setNegativeButton("Cancel", null)
                         .show();
                 return true;
             });
@@ -423,11 +424,11 @@ public class MainActivity extends Activity {
     private void backfillListingTimes() {
         if (backfilling) return;
         android.content.SharedPreferences fx = getSharedPreferences("fixes", MODE_PRIVATE);
-        if (!fx.getBoolean("listedAtV2", false)) {
+        if (!fx.getBoolean("listedAtV3", false)) {
             List<Listing> all = Store.finds(this);
             for (Listing l : all) if ("new".equals(l.kind)) l.listedAt = 0;
             Store.saveFinds(this, all);
-            fx.edit().putBoolean("listedAtV2", true).apply();
+            fx.edit().putBoolean("listedAtV3", true).apply();
         }
         List<Listing> todo = new java.util.ArrayList<>();
         for (Listing l : Store.finds(this)) {
@@ -483,6 +484,23 @@ public class MainActivity extends Activity {
             handler.post(() -> {
                 Toast.makeText(app, msg + extra, Toast.LENGTH_LONG).show();
                 renderFinds();
+            });
+        }).start();
+    }
+
+    @SuppressWarnings("deprecation")
+    private void diagnose(Listing l) {
+        android.app.ProgressDialog pd = android.app.ProgressDialog.show(this, null, "Checking the listing page…", true, false);
+        new Thread(() -> {
+            String report = Fetcher.diagnose(l.id);
+            handler.post(() -> {
+                if (isFinishing()) return;
+                pd.dismiss();
+                new AlertDialog.Builder(this)
+                        .setTitle("Listing time check")
+                        .setMessage(report + "\n\nScreenshot this and send it to Claude.")
+                        .setPositiveButton("OK", null)
+                        .show();
             });
         }).start();
     }
