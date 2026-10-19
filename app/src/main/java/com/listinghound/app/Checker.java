@@ -18,6 +18,7 @@ public final class Checker {
         public int failed;
         public int ok;
         public int outOfArea;
+        public int repeats;
         public boolean loginNeeded;
         public String lastError;
         public String text = "";
@@ -48,6 +49,14 @@ public final class Checker {
             }
 
             boolean baseline = !Store.hasBaseline(c, s.id);
+            // Recent alerts for this search, to spot the same item reposted under a new ID
+            java.util.Map<String, Listing> recent = new java.util.HashMap<>();
+            for (Listing f : Store.finds(c)) {
+                if (!s.displayName().equals(f.searchName)) continue;
+                if (System.currentTimeMillis() - f.foundAt > 14 * 24 * 3600_000L) continue;
+                recent.putIfAbsent(sameItemKey(f), f);
+            }
+            for (Listing f : sum.fresh) recent.putIfAbsent(sameItemKey(f), f);
             long prevOk = Store.lastOk(c, s.id);
             boolean checkArea = s.strictArea && s.radiusKm > 0 && !s.location.trim().isEmpty();
             double[] centre = checkArea ? Geo.centre(c, s) : null;
@@ -63,10 +72,22 @@ public final class Checker {
                 boolean inArea = l.km < 0 || centre == null || l.km <= s.radiusKm * 1.15 + 3;
                 if (!inArea && !baseline && prev == null && s.matches(l)) sum.outOfArea++;
                 if (!baseline && s.matches(l) && inArea) {
-                    if (prev == null) {
+                    Listing twin = prev == null ? recent.get(sameItemKey(l)) : null;
+                    if (twin != null && !twin.id.equals(l.id)) {
+                        // Same title and town as something already alerted: a repost, not a new item
+                        if (s.alertDrops && twin.amount > 0 && l.amount >= 0 && l.amount < twin.amount - 0.005) {
+                            l.kind = "drop";
+                            l.oldPrice = formatLike(l.price, twin.amount);
+                            sum.fresh.add(l);
+                            recent.put(sameItemKey(l), l);
+                        } else {
+                            sum.repeats++;
+                        }
+                    } else if (prev == null) {
                         l.kind = "new";
                         l.prevCheckAt = prevOk;
                         sum.fresh.add(l);
+                        recent.put(sameItemKey(l), l);
                     } else if (s.alertDrops && prev.amount > 0 && l.amount >= 0 && l.amount < prev.amount - 0.005) {
                         l.kind = "drop";
                         l.oldPrice = formatLike(l.price, prev.amount);
@@ -117,6 +138,7 @@ public final class Checker {
             sum.text = n + " new";
             if (d > 0) sum.text += ", " + d + " price drop" + (d == 1 ? "" : "s");
             if (u > 0) sum.text += ", " + u + " updated";
+            if (sum.repeats > 0) sum.text += " · " + sum.repeats + " repost" + (sum.repeats == 1 ? "" : "s") + " skipped";
             if (sum.outOfArea > 0) sum.text += " · " + sum.outOfArea + " outside your radius ignored";
             if (sum.failed > 0) sum.text += " · " + sum.failed + " search" + (sum.failed == 1 ? "" : "es") + " failed";
         }
@@ -143,5 +165,12 @@ public final class Checker {
             prefix = newPrice.substring(0, i);
         }
         return prefix + num;
+    }
+
+    /** Same title (ignoring case, spacing and punctuation) in the same town. */
+    static String sameItemKey(Listing l) {
+        String t = (l.title == null ? "" : l.title).toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", " ").trim();
+        String town = (l.city == null ? "" : l.city).toLowerCase(Locale.ROOT).trim();
+        return t + "|" + town;
     }
 }
