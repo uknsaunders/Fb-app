@@ -375,7 +375,6 @@ public final class Fetcher {
             return "Couldn't load the listing page: " + e.getClass().getSimpleName();
         }
         b.append("Listing ID: ").append(id).append('\n');
-        b.append("Listing ID: ").append(id).append('\n');
         b.append("Page: HTTP ").append(code[0]);
         if (html == null) return b.append(" (no page)").toString();
         b.append(", ").append(html.length() / 1024).append(" KB\n");
