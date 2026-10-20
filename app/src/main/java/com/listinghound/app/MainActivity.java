@@ -60,6 +60,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         setContentView(R.layout.activity_main);
+        Categories.load(this);
         Notif.channels(this);
 
         tvState = findViewById(R.id.tvState);
@@ -545,6 +546,8 @@ public class MainActivity extends Activity {
             StringBuilder why = new StringBuilder();
             if (!l.city.isEmpty()) why.append(l.city);
             if (l.km >= 0) why.append(why.length() > 0 ? " · " : "").append(Math.round(l.km)).append(" km");
+            String cat = Categories.nameFor(l.categoryId);
+            if (!cat.isEmpty()) why.append(why.length() > 0 ? " · " : "").append(cat);
             if (!l.reasons.isEmpty()) why.append(why.length() > 0 ? "\n" : "").append(l.reasons);
             ((TextView) row.findViewById(R.id.why)).setText(why.toString());
             ((TextView) row.findViewById(R.id.tag)).setText(l.searchName);
@@ -595,6 +598,8 @@ public class MainActivity extends Activity {
         StringBuilder b = new StringBuilder(l.searchName);
         if (!l.city.isEmpty()) b.append(" · ").append(l.city);
         if (l.km >= 0) b.append(" (").append(Math.round(l.km)).append(" km)");
+        String cat = Categories.nameFor(l.categoryId);
+        if (!cat.isEmpty()) b.append(" · ").append(cat);
         String timing = Timing.explain(this, l);
         if (!timing.isEmpty()) {
             b.append('\n').append(timing);

@@ -17,13 +17,14 @@ public class EditSearchActivity extends Activity {
     private Switch swArea;
     private android.widget.Spinner spIncludeMode;
     private TextView tvKinds;
-    private String blockedCats = "", blockedLabels = "";
+    private String cats = "";
     private android.widget.Spinner spNew, spDrop, spRenewed, spUpdated;
 
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         setContentView(R.layout.activity_edit);
+        Categories.load(this);
 
         etQuery = findViewById(R.id.etQuery);
         etName = findViewById(R.id.etName);
@@ -71,8 +72,7 @@ public class EditSearchActivity extends Activity {
             etMax.setText(original.maxPrice > 0 ? String.valueOf(original.maxPrice) : "");
             etDescInc.setText(original.descInclude);
             etDescExc.setText(original.descExclude);
-            blockedCats = original.blockedCats;
-            blockedLabels = original.blockedLabels;
+            cats = original.cats;
             spIncludeMode.setSelection(original.includeAny ? 1 : 0);
             etExclude.setText(original.exclude);
         }
@@ -93,109 +93,95 @@ public class EditSearchActivity extends Activity {
     }
 
     private void showKinds() {
-        java.util.Map<String, String> m = new java.util.LinkedHashMap<>();
-        for (String line : blockedLabels.split("\n")) {
-            int t = line.indexOf('\t');
-            if (t > 0) m.put(line.substring(0, t), line.substring(t + 1));
-        }
-        int n = 0;
-        for (String p : blockedCats.split(",")) if (!p.trim().isEmpty()) n++;
-        if (n == 0) {
-            tvKinds.setText("Showing all kinds");
+        java.util.Set<String> set = new java.util.LinkedHashSet<>();
+        for (String p : cats.split(",")) if (!p.trim().isEmpty()) set.add(p.trim());
+        if (set.isEmpty()) {
+            tvKinds.setText("All categories");
         } else {
-            StringBuilder b = new StringBuilder("Hiding ").append(n).append(n == 1 ? " kind:" : " kinds:");
-            for (String p : blockedCats.split(",")) {
-                String label = m.get(p.trim());
-                if (label != null) b.append("\n• ").append(label);
-            }
-            tvKinds.setText(b.toString());
+            java.util.List<String> names = new java.util.ArrayList<>();
+            for (String c : set) names.add(Search.categoryLabel(c));
+            tvKinds.setText("Only: " + String.join(", ", names));
         }
     }
 
-    /** Runs the search, groups results by Facebook category, and lets the user untick unwanted kinds. */
+    /** Learns Facebook's category numbers if needed, then shows named categories to tick. */
     @SuppressWarnings("deprecation")
     private void chooseKinds() {
         Search s = fromForm();
-        if (s.query.isEmpty()) {
-            etQuery.setError("Enter at least one keyword");
-            return;
-        }
-        s.blockedCats = ""; // see every kind while choosing
-        ProgressDialog pd = ProgressDialog.show(this, null, "Finding the kinds of listing…", true, false);
+        s.cats = ""; // count matches in every category
+        ProgressDialog pd = new ProgressDialog(this);
+        pd.setMessage(Categories.stale() ? "Learning Facebook's categories (one-off, about 30 seconds)…" : "Counting matches by category…");
+        pd.setCancelable(false);
+        pd.show();
         new Thread(() -> {
-            java.util.LinkedHashMap<String, Listing> all = new java.util.LinkedHashMap<>();
-            for (String sort : new String[]{"creation_time_descend", "price_ascend"}) {
-                Fetcher.Result r = Fetcher.fetchAll(s, sort, s.radiusKm);
-                for (Listing l : r.listings) all.putIfAbsent(l.id, l);
+            if (Categories.stale()) {
+                Categories.learn(getApplicationContext(), (done, total) -> runOnUiThread(() ->
+                        pd.setMessage("Learning Facebook's categories… " + done + " of " + total)));
             }
-            // Group matching listings by category number
-            java.util.LinkedHashMap<String, java.util.List<String>> groups = new java.util.LinkedHashMap<>();
-            for (Listing l : all.values()) {
-                if (l.categoryId.isEmpty() || !s.matches(l)) continue;
-                groups.computeIfAbsent(l.categoryId, k -> new java.util.ArrayList<>()).add(l.title);
+            java.util.Map<String, Integer> now = new java.util.HashMap<>();
+            int unknown = 0;
+            if (!s.query.isEmpty()) {
+                runOnUiThread(() -> pd.setMessage("Counting your matches by category…"));
+                Fetcher.Result r = Fetcher.fetchAll(s, "creation_time_descend", s.radiusKm);
+                for (Listing l : r.listings) {
+                    if (!s.matches(l)) continue;
+                    String slug = Categories.slugFor(l.categoryId);
+                    if (slug == null) unknown++;
+                    else now.merge(slug, 1, Integer::sum);
+                }
             }
+            final int unk = unknown;
             runOnUiThread(() -> {
                 if (isFinishing()) return;
                 pd.dismiss();
-                showKindPicker(groups);
+                showCategoryPicker(now, unk);
             });
         }).start();
     }
 
-    private void showKindPicker(java.util.LinkedHashMap<String, java.util.List<String>> groups) {
-        java.util.Set<String> blocked = new java.util.HashSet<>();
-        for (String p : blockedCats.split(",")) if (!p.trim().isEmpty()) blocked.add(p.trim());
-        java.util.Map<String, String> oldLabels = new java.util.LinkedHashMap<>();
-        for (String line : blockedLabels.split("\n")) {
-            int t = line.indexOf('\t');
-            if (t > 0) oldLabels.put(line.substring(0, t), line.substring(t + 1));
-        }
-        // Kinds already hidden but not in today's results stay listed, so they can be shown again
-        for (String id : blocked) {
-            if (!groups.containsKey(id)) {
-                java.util.List<String> one = new java.util.ArrayList<>();
-                one.add(oldLabels.containsKey(id) ? oldLabels.get(id) : "(not in today's results)");
-                groups.put(id, one);
-            }
-        }
-        if (groups.isEmpty()) {
-            new AlertDialog.Builder(this).setMessage("No matching listings to group yet. Try again when your search finds something.")
+    private void showCategoryPicker(java.util.Map<String, Integer> now, int unknown) {
+        if (!Categories.known()) {
+            new AlertDialog.Builder(this).setMessage("Couldn't learn Facebook's categories just now. Check you're logged in and try again.")
                     .setPositiveButton("OK", null).show();
             return;
         }
-        String[] ids = groups.keySet().toArray(new String[0]);
-        String[] labels = new String[ids.length];
-        String[] shortLabels = new String[ids.length];
-        boolean[] checked = new boolean[ids.length];
-        for (int i = 0; i < ids.length; i++) {
-            java.util.List<String> titles = groups.get(ids[i]);
-            StringBuilder ex = new StringBuilder();
-            for (int k = 0; k < Math.min(3, titles.size()); k++) {
-                if (k > 0) ex.append(" · ");
-                String t = titles.get(k);
-                ex.append(t.length() > 40 ? t.substring(0, 40) + "…" : t);
-            }
-            shortLabels[i] = ex.toString();
-            labels[i] = ex + (titles.size() > 1 || !blocked.contains(ids[i]) ? "  (" + titles.size() + ")" : "");
-            checked[i] = !blocked.contains(ids[i]);
+        java.util.Set<String> chosen = new java.util.LinkedHashSet<>();
+        for (String p : cats.split(",")) if (!p.trim().isEmpty()) chosen.add(p.trim());
+        // Categories with matches first, then the rest
+        java.util.List<String[]> order = new java.util.ArrayList<>();
+        for (String[] c : Search.CATEGORIES) if (!c[0].isEmpty() && now.containsKey(c[0])) order.add(c);
+        for (String[] c : Search.CATEGORIES) if (!c[0].isEmpty() && !now.containsKey(c[0])) order.add(c);
+        String[] labels = new String[order.size()];
+        boolean[] checked = new boolean[order.size()];
+        for (int i = 0; i < order.size(); i++) {
+            String slug = order.get(i)[0];
+            Integer n = now.get(slug);
+            labels[i] = order.get(i)[1] + (n != null ? "  — " + n + " now" : "");
+            checked[i] = chosen.isEmpty() ? n != null : chosen.contains(slug);
         }
-        new AlertDialog.Builder(this)
-                .setTitle("Untick the kinds you don't want")
+        String title = "Only show these categories";
+        AlertDialog.Builder b = new AlertDialog.Builder(this)
+                .setTitle(title)
                 .setMultiChoiceItems(labels, checked, (d, which, on) -> checked[which] = on)
                 .setPositiveButton("Done", (d, w) -> {
-                    StringBuilder cats = new StringBuilder(), lab = new StringBuilder();
-                    for (int i = 0; i < ids.length; i++) {
-                        if (checked[i]) continue;
-                        if (cats.length() > 0) cats.append(',');
-                        cats.append(ids[i]);
-                        lab.append(ids[i]).append('\t').append(shortLabels[i]).append('\n');
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < order.size(); i++) {
+                        if (!checked[i]) continue;
+                        if (sb.length() > 0) sb.append(',');
+                        sb.append(order.get(i)[0]);
                     }
-                    blockedCats = cats.toString();
-                    blockedLabels = lab.toString();
+                    cats = sb.toString();
                     showKinds();
                 })
-                .setNegativeButton("Cancel", null)
-                .show();
+                .setNeutralButton("All categories", (d, w) -> {
+                    cats = "";
+                    showKinds();
+                })
+                .setNegativeButton("Cancel", null);
+        if (unknown > 0) {
+            b.setTitle(title + " (" + unknown + " match" + (unknown == 1 ? "" : "es") + " in unlearned categories will still show)");
+        }
+        b.show();
     }
 
     private Search fromForm() {
@@ -215,8 +201,7 @@ public class EditSearchActivity extends Activity {
         s.descInclude = etDescInc.getText().toString().trim();
         s.descExclude = etDescExc.getText().toString().trim();
         s.category = "";
-        s.blockedCats = blockedCats;
-        s.blockedLabels = blockedLabels;
+        s.cats = cats;
         s.includeAny = spIncludeMode.getSelectedItemPosition() == 1;
         s.exclude = etExclude.getText().toString().trim();
         s.modeNew = spNew.getSelectedItemPosition();

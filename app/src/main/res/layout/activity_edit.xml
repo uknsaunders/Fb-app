@@ -106,7 +106,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <TextView style="@style/Label" android:text="Kinds of listing (Facebook categories)" />
+            <TextView style="@style/Label" android:text="Categories" />
             <TextView
                 android:id="@+id/tvKinds"
                 android:layout_width="match_parent"
@@ -119,7 +119,7 @@
                 style="@style/TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Choose kinds of listing…" />
+                android:text="Choose categories…" />
 
             <TextView style="@style/Label" android:text="Skip if title contains any of" />
             <EditText

@@ -123,6 +123,11 @@ public final class Deals {
             "parts only", "not working", "for parts", "swap", "looking for", "iso "};
 
     public static String scan(Context c) {
+        Categories.load(c);
+        // Keep the category table fresh if any search uses categories
+        boolean usesCats = false;
+        for (Search s : Store.searches(c)) if (!s.cats.isEmpty()) usesCats = true;
+        if (usesCats && Categories.stale()) Categories.learn(c, null);
         List<Listing> all = new ArrayList<>();
         int searched = 0, failed = 0;
         int extra = extraPct(c);

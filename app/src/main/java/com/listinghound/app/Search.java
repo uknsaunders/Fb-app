@@ -25,7 +25,16 @@ public class Search {
     public boolean enabled = true;
     /** Facebook category slug, e.g. "garden"; blank = any category. */
     public String category = "";
-    /** Facebook category numbers to leave out, comma-separated. */
+    /** Only these categories (slugs, comma-separated); blank = all. */
+    public String cats = "";
+
+    public java.util.Set<String> catSet() {
+        java.util.Set<String> out = new java.util.LinkedHashSet<>();
+        for (String p : cats.split(",")) if (!p.trim().isEmpty()) out.add(p.trim());
+        return out;
+    }
+
+    /** Facebook category numbers to leave out, comma-separated (older versions). */
     public String blockedCats = "";
     /** Example titles for each blocked kind: lines of "id<TAB>label". */
     public String blockedLabels = "";
@@ -160,8 +169,11 @@ public class Search {
             else if (minPrice > 0) b.append("£").append(minPrice).append('+');
             else b.append("up to £").append(maxPrice);
         }
-        int hidden = blockedSet().size();
-        if (hidden > 0) b.append(" · hiding ").append(hidden).append(hidden == 1 ? " kind" : " kinds");
+        if (!cats.isEmpty()) {
+            List<String> names = new ArrayList<>();
+            for (String c : catSet()) names.add(categoryLabel(c));
+            b.append(" · only ").append(String.join(", ", names));
+        }
         if (!descInclude.trim().isEmpty()) b.append(" · description has: ").append(descInclude.trim());
         if (!descExclude.trim().isEmpty()) b.append(" · description not: ").append(descExclude.trim());
         if (!exclude.trim().isEmpty()) b.append(" · not: ").append(exclude.trim());
@@ -170,7 +182,11 @@ public class Search {
 
     public boolean matches(Listing l) {
         String t = (l.title == null ? "" : l.title).toLowerCase(Locale.ROOT);
-        if (!l.categoryId.isEmpty() && !blockedCats.isEmpty() && blockedSet().contains(l.categoryId)) return false;
+        if (!cats.isEmpty()) {
+            String slug = Categories.slugFor(l.categoryId);
+            // Unknown category numbers are let through, so nothing is missed
+            if (slug != null && !catSet().contains(slug)) return false;
+        }
         List<String> kws = phrases();
         if (titleOnly && !kws.isEmpty()) {
             boolean any = false, all = true;
@@ -212,6 +228,7 @@ public class Search {
             j.put("exclude", exclude);
             j.put("enabled", enabled);
             j.put("category", category);
+            j.put("cats", cats);
             j.put("blockedCats", blockedCats);
             j.put("blockedLabels", blockedLabels);
             j.put("includeAny", includeAny);
@@ -241,8 +258,9 @@ public class Search {
         s.exclude = j.optString("exclude", "");
         s.enabled = j.optBoolean("enabled", true);
         s.category = ""; // category pages ignored the keywords; kinds are now filtered on the phone
-        s.blockedCats = j.optString("blockedCats", "");
-        s.blockedLabels = j.optString("blockedLabels", "");
+        s.cats = j.optString("cats", "");
+        s.blockedCats = "";
+        s.blockedLabels = "";
         s.includeAny = j.optBoolean("includeAny", false);
         s.descInclude = j.optString("descInclude", "");
         s.descExclude = j.optString("descExclude", "");

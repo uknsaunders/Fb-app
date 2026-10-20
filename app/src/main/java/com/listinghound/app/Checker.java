@@ -31,6 +31,7 @@ public final class Checker {
     private static final Random RND = new Random();
 
     public static Summary runAll(Context c) {
+        Categories.load(c);
         Summary sum = new Summary();
         List<Search> list = Store.searches(c);
         boolean first = true;
