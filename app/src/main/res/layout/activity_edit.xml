@@ -106,11 +106,20 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <TextView style="@style/Label" android:text="Facebook category" />
-            <Spinner
-                android:id="@+id/spCategory"
+            <TextView style="@style/Label" android:text="Kinds of listing (Facebook categories)" />
+            <TextView
+                android:id="@+id/tvKinds"
                 android:layout_width="match_parent"
-                android:layout_height="48dp" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/text"
+                android:textSize="15sp" />
+            <Button
+                android:id="@+id/btnKinds"
+                style="@style/TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Choose kinds of listing…" />
 
             <TextView style="@style/Label" android:text="Skip if title contains any of" />
             <EditText

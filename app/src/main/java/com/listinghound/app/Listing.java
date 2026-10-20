@@ -14,6 +14,8 @@ public class Listing {
     public double amount = -1;
     public String city = "";
     public String state = "";
+    /** Facebook's category number for this listing ("" if not sent). */
+    public String categoryId = "";
     /** Distance from the search centre in km, or -1 if unknown. */
     public double km = -1;
     public String imageUrl = "";
@@ -81,6 +83,7 @@ public class Listing {
             j.put("amount", amount);
             j.put("city", city);
             j.put("state", state);
+            j.put("cat", categoryId);
             j.put("km", km);
             j.put("image", imageUrl);
             j.put("search", searchName);
@@ -108,6 +111,7 @@ public class Listing {
         l.amount = j.optDouble("amount", -1);
         l.city = j.optString("city", "");
         l.state = j.optString("state", "");
+        l.categoryId = j.optString("cat", "");
         l.km = j.optDouble("km", -1);
         l.imageUrl = j.optString("image", "");
         l.searchName = j.optString("search", "");

@@ -87,14 +87,8 @@ public final class Fetcher {
     public static String buildUrl(Search s, String query, String sort, int radiusKm) {
         StringBuilder u = new StringBuilder(FB).append("/marketplace/");
         String loc = s.location.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_\\-]", "");
-        String cat = s.category == null ? "" : s.category.trim();
-        if (!cat.isEmpty()) {
-            // Category page, searched within: /marketplace/<city>/<category>?query=
-            u.append(loc.isEmpty() ? "category" : loc).append('/').append(cat).append('?');
-        } else {
-            if (!loc.isEmpty()) u.append(loc).append('/');
-            u.append("search?");
-        }
+        if (!loc.isEmpty()) u.append(loc).append('/');
+        u.append("search?");
         String q;
         try {
             q = URLEncoder.encode(query.trim(), "UTF-8");
@@ -270,6 +264,8 @@ public final class Fetcher {
         l.id = id;
         l.title = j.optString("marketplace_listing_title", "").trim();
         l.categoryInfo = categoryFields(j, 0);
+        Matcher cm = Pattern.compile("marketplace_listing_category_id=(\\d+)").matcher(l.categoryInfo);
+        if (cm.find()) l.categoryId = cm.group(1);
         JSONObject price = j.optJSONObject("listing_price");
         if (price != null) {
             l.price = price.optString("formatted_amount", "");
