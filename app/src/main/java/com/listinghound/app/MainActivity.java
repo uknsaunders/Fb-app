@@ -424,7 +424,7 @@ public class MainActivity extends Activity {
             View row = inf.inflate(R.layout.item_row, llFinds, false);
             ((TextView) row.findViewById(R.id.title)).setText(l.headline());
             String detail = findDetail(l);
-            ((TextView) row.findViewById(R.id.sub)).setText(detail.replaceFirst("^[\\s·()]+(?=\\S)", "").trim());
+            ((TextView) row.findViewById(R.id.sub)).setText(detail.replaceFirst("^[\\s·]+", "").trim());
             TextView tag = row.findViewById(R.id.tag);
             tag.setText(l.searchName);
             tag.setVisibility(l.searchName.isEmpty() ? View.GONE : View.VISIBLE);
