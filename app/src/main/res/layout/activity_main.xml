@@ -291,7 +291,7 @@
 
                 <TextView
                     style="@style/SectionTitle"
-                    android:text="Deals · DealRank" />
+                    android:text="DealRank" />
 
                 <Button
                     android:id="@+id/btnDealsNow"
@@ -301,11 +301,38 @@
                     android:text="Check now" />
 
                 <Button
+                    android:id="@+id/btnDealsClear"
+                    style="@style/TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Clear" />
+
+                <Button
                     android:id="@+id/btnDealsSettings"
                     style="@style/TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Settings" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Keep:"
+                    android:textColor="@color/subtext"
+                    android:textSize="14sp" />
+
+                <Spinner
+                    android:id="@+id/spDealsWindow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp" />
             </LinearLayout>
 
             <LinearLayout
@@ -347,6 +374,26 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Clear" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Keep:"
+                    android:textColor="@color/subtext"
+                    android:textSize="14sp" />
+
+                <Spinner
+                    android:id="@+id/spFindsWindow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp" />
             </LinearLayout>
 
             <HorizontalScrollView

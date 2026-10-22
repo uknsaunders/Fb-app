@@ -83,7 +83,43 @@ public final class Deals {
         return out;
     }
 
+    private static synchronized void saveList(Context c, List<Listing> list) {
+        JSONArray a = new JSONArray();
+        for (int i = 0; i < Math.min(40, list.size()); i++) a.put(list.get(i).toJson());
+        p(c).edit().putString("results", a.toString()).apply();
+    }
+
+    /** Clears deals for one search (or all, if searchId is null). They stay hidden unless their score rises by 10+. */
+    public static synchronized void clear(Context c, String searchId) {
+        Map<String, Integer> dis = readMap(c, "dismissed");
+        List<Listing> keep = new ArrayList<>();
+        for (Listing l : results(c)) {
+            if (searchId == null || searchId.equals(l.searchId)) dis.put(l.id, l.score);
+            else keep.add(l);
+        }
+        saveMap(c, "dismissed", dis);
+        saveList(c, keep);
+    }
+
+    /** Removes deals found more than maxAgeMs ago (0 = keep everything). */
+    public static synchronized void prune(Context c, long maxAgeMs) {
+        if (maxAgeMs <= 0) return;
+        long cut = System.currentTimeMillis() - maxAgeMs;
+        List<Listing> all = results(c), keep = new ArrayList<>();
+        for (Listing l : all) if (l.foundAt >= cut) keep.add(l);
+        if (keep.size() != all.size()) saveList(c, keep);
+    }
+
     private static synchronized void saveResults(Context c, List<Listing> list, String note) {
+        Map<String, Integer> dis = readMap(c, "dismissed");
+        if (!dis.isEmpty()) {
+            List<Listing> keep = new ArrayList<>();
+            for (Listing l : list) {
+                Integer d = dis.get(l.id);
+                if (d == null || l.score >= d + 10) keep.add(l);
+            }
+            list = keep;
+        }
         JSONArray a = new JSONArray();
         for (int i = 0; i < Math.min(40, list.size()); i++) a.put(list.get(i).toJson());
         p(c).edit().putString("results", a.toString())
@@ -93,8 +129,12 @@ public final class Deals {
 
     /** Deals already notified, with the score at the time (so we only repeat if it jumps). */
     private static Map<String, Integer> notified(Context c) {
+        return readMap(c, "notified");
+    }
+
+    private static Map<String, Integer> readMap(Context c, String key) {
         Map<String, Integer> m = new HashMap<>();
-        for (String e : p(c).getString("notified", "").split(",")) {
+        for (String e : p(c).getString(key, "").split(",")) {
             int i = e.indexOf(':');
             if (i > 0) {
                 try {
@@ -107,6 +147,10 @@ public final class Deals {
     }
 
     private static void saveNotified(Context c, Map<String, Integer> m) {
+        saveMap(c, "notified", m);
+    }
+
+    private static void saveMap(Context c, String key, Map<String, Integer> m) {
         StringBuilder b = new StringBuilder();
         int n = 0;
         for (Map.Entry<String, Integer> e : m.entrySet()) {
@@ -114,7 +158,7 @@ public final class Deals {
             if (b.length() > 0) b.append(',');
             b.append(e.getKey()).append(':').append(e.getValue());
         }
-        p(c).edit().putString("notified", b.toString()).apply();
+        p(c).edit().putString(key, b.toString()).apply();
     }
 
     // ---------- Scan ----------

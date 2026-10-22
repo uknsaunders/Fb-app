@@ -78,6 +78,12 @@ public class EditSearchActivity extends Activity {
         }
 
         showKinds();
+        findViewById(R.id.tvAdvanced).setOnClickListener(v -> {
+            View adv = findViewById(R.id.llAdvanced);
+            adv.setVisibility(adv.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+            updateAdvancedLabel();
+        });
+        updateAdvancedLabel();
         findViewById(R.id.btnSave).setOnClickListener(v -> save());
         findViewById(R.id.btnPreview).setOnClickListener(v -> preview());
         findViewById(R.id.btnDelete).setOnClickListener(v -> confirmDelete());
@@ -90,6 +96,18 @@ public class EditSearchActivity extends Activity {
         a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         sp.setAdapter(a);
         return sp;
+    }
+
+    private void updateAdvancedLabel() {
+        TextView t = findViewById(R.id.tvAdvanced);
+        if (t == null) return;
+        int n = 0;
+        if (!cats.isEmpty()) n++;
+        if (!etExclude.getText().toString().trim().isEmpty()) n++;
+        if (!etDescInc.getText().toString().trim().isEmpty()) n++;
+        if (!etDescExc.getText().toString().trim().isEmpty()) n++;
+        boolean open = findViewById(R.id.llAdvanced).getVisibility() == View.VISIBLE;
+        t.setText("Advanced  " + (open ? "▴" : "▾") + (n > 0 ? "   ·  " + n + " set" : ""));
     }
 
     private void showKinds() {
@@ -172,10 +190,12 @@ public class EditSearchActivity extends Activity {
                     }
                     cats = sb.toString();
                     showKinds();
+                    updateAdvancedLabel();
                 })
                 .setNeutralButton("All categories", (d, w) -> {
                     cats = "";
                     showKinds();
+                    updateAdvancedLabel();
                 })
                 .setNegativeButton("Cancel", null);
         if (unknown > 0) {

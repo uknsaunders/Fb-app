@@ -106,47 +106,67 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <TextView style="@style/Label" android:text="Categories" />
             <TextView
-                android:id="@+id/tvKinds"
+                android:id="@+id/tvAdvanced"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textColor="@color/text"
-                android:textSize="15sp" />
-            <Button
-                android:id="@+id/btnKinds"
-                style="@style/TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Choose categories…" />
+                android:layout_marginTop="16dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:minHeight="44dp"
+                android:gravity="center_vertical"
+                android:textColor="@color/accent"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
-            <TextView style="@style/Label" android:text="Skip if title contains any of" />
-            <EditText
-                android:id="@+id/etExclude"
-                style="@style/Field"
-                android:hint="e.g. wanted, broken, parts"
-                android:inputType="textNoSuggestions" />
-
-            <TextView style="@style/Label" android:text="Description must mention any of (optional)" />
-            <EditText
-                android:id="@+id/etDescInc"
-                style="@style/Field"
-                android:hint="e.g. fruiting, bare root"
-                android:inputType="textNoSuggestions" />
-
-            <TextView style="@style/Label" android:text="Skip if description mentions any of" />
-            <EditText
-                android:id="@+id/etDescExc"
-                style="@style/Field"
-                android:hint="e.g. artificial, plastic, fake"
-                android:inputType="textNoSuggestions" />
-            <TextView
+            <LinearLayout
+                android:id="@+id/llAdvanced"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Descriptions are checked by opening each matching listing, so these add a few seconds per check."
-                android:textColor="@color/subtext"
-                android:textSize="12sp" />
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView style="@style/Label" android:text="Categories" />
+                <TextView
+                    android:id="@+id/tvKinds"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/text"
+                    android:textSize="15sp" />
+                <Button
+                    android:id="@+id/btnKinds"
+                    style="@style/TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Choose categories…" />
+
+                <TextView style="@style/Label" android:text="Skip if title contains any of" />
+                <EditText
+                    android:id="@+id/etExclude"
+                    style="@style/Field"
+                    android:hint="e.g. wanted, broken, parts"
+                    android:inputType="textNoSuggestions" />
+
+                <TextView style="@style/Label" android:text="Description must mention any of (optional)" />
+                <EditText
+                    android:id="@+id/etDescInc"
+                    style="@style/Field"
+                    android:hint="e.g. fruiting, bare root"
+                    android:inputType="textNoSuggestions" />
+
+                <TextView style="@style/Label" android:text="Skip if description mentions any of" />
+                <EditText
+                    android:id="@+id/etDescExc"
+                    style="@style/Field"
+                    android:hint="e.g. artificial, plastic, fake"
+                    android:inputType="textNoSuggestions" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Descriptions are checked by opening each matching listing, so these add a few seconds per check."
+                    android:textColor="@color/subtext"
+                    android:textSize="12sp" />
+            </LinearLayout>
 
             <Switch
                 android:id="@+id/swArea"

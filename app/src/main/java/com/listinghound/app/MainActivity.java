@@ -83,6 +83,9 @@ public class MainActivity extends Activity {
             Deals.runNow(this);
             Toast.makeText(this, "Checking for deals in the background…", Toast.LENGTH_SHORT).show();
         });
+        findViewById(R.id.btnDealsClear).setOnClickListener(v -> clearDeals());
+        setupWindow(R.id.spDealsWindow, "dealsWin", this::renderDeals);
+        setupWindow(R.id.spFindsWindow, "findsWin", this::renderFinds);
         findViewById(R.id.btnDealsSettings).setOnClickListener(v ->
                 startActivity(new Intent(this, DealsSettingsActivity.class)));
         Deals.schedule(this);
@@ -380,6 +383,13 @@ public class MainActivity extends Activity {
     }
 
     private void renderFinds() {
+        long keep = windowMs("findsWin");
+        if (keep > 0) {
+            List<Listing> fs = Store.finds(this);
+            List<Listing> kept = new java.util.ArrayList<>();
+            for (Listing l : fs) if (System.currentTimeMillis() - l.foundAt <= keep) kept.add(l);
+            if (kept.size() != fs.size()) Store.saveFinds(this, kept);
+        }
         tvStats.setText(Timing.headline(this));
         llFinds.removeAllViews();
         String stats = Timing.summary(this);
@@ -413,7 +423,11 @@ public class MainActivity extends Activity {
             Listing l = finds.get(i);
             View row = inf.inflate(R.layout.item_row, llFinds, false);
             ((TextView) row.findViewById(R.id.title)).setText(l.headline());
-            ((TextView) row.findViewById(R.id.sub)).setText(findDetail(l));
+            String detail = findDetail(l);
+            ((TextView) row.findViewById(R.id.sub)).setText(detail.replaceFirst("^[\\s·()]+(?=\\S)", "").trim());
+            TextView tag = row.findViewById(R.id.tag);
+            tag.setText(l.searchName);
+            tag.setVisibility(l.searchName.isEmpty() ? View.GONE : View.VISIBLE);
             row.setOnClickListener(v -> startActivity(ListingViewActivity.intent(this, l)));
             row.setOnLongClickListener(v -> {
                 new AlertDialog.Builder(this)
@@ -488,7 +502,68 @@ public class MainActivity extends Activity {
         }
     }
 
+    static final String[] WIN_LABELS = {"Last hour", "Last day", "Last week", "Everything"};
+    static final long[] WIN_MS = {3600_000L, 24 * 3600_000L, 7 * 24 * 3600_000L, 0};
+
+    private long windowMs(String key) {
+        int i = getSharedPreferences("ui", MODE_PRIVATE).getInt(key, 2);
+        return WIN_MS[Math.max(0, Math.min(WIN_MS.length - 1, i))];
+    }
+
+    private void setupWindow(int spinnerId, String key, Runnable onChange) {
+        Spinner sp = findViewById(spinnerId);
+        ArrayAdapter<String> a = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, WIN_LABELS);
+        a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        sp.setAdapter(a);
+        sp.setSelection(getSharedPreferences("ui", MODE_PRIVATE).getInt(key, 2), false);
+        sp.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
+                if (getSharedPreferences("ui", MODE_PRIVATE).getInt(key, 2) == pos) return;
+                getSharedPreferences("ui", MODE_PRIVATE).edit().putInt(key, pos).apply();
+                onChange.run();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> p) {}
+        });
+    }
+
+    /** Clear DealRank for all searches or one chosen search. */
+    private void clearDeals() {
+        List<Listing> deals = Deals.results(this);
+        if (deals.isEmpty()) {
+            Toast.makeText(this, "Nothing to clear", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        java.util.LinkedHashMap<String, String> searches = new java.util.LinkedHashMap<>(); // id -> name
+        java.util.Map<String, Integer> counts = new java.util.HashMap<>();
+        for (Listing l : deals) {
+            searches.putIfAbsent(l.searchId, l.searchName);
+            counts.merge(l.searchId, 1, Integer::sum);
+        }
+        String[] ids = new String[searches.size() + 1];
+        String[] labels = new String[searches.size() + 1];
+        ids[0] = null;
+        labels[0] = "All searches (" + deals.size() + ")";
+        int i = 1;
+        for (java.util.Map.Entry<String, String> e : searches.entrySet()) {
+            ids[i] = e.getKey();
+            labels[i] = e.getValue() + " (" + counts.get(e.getKey()) + ")";
+            i++;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Clear deals for…")
+                .setItems(labels, (d, which) -> {
+                    Deals.clear(this, ids[which]);
+                    renderDeals();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
     private void renderDeals() {
+        Deals.prune(this, windowMs("dealsWin"));
         llDeals.removeAllViews();
         StringBuilder st = new StringBuilder();
         if (Deals.scanning) {
@@ -595,8 +670,8 @@ public class MainActivity extends Activity {
     }
 
     private String findDetail(Listing l) {
-        StringBuilder b = new StringBuilder(l.searchName);
-        if (!l.city.isEmpty()) b.append(" · ").append(l.city);
+        StringBuilder b = new StringBuilder();
+        if (!l.city.isEmpty()) b.append(l.city);
         if (l.km >= 0) b.append(" (").append(Math.round(l.km)).append(" km)");
         String cat = Categories.nameFor(l.categoryId);
         if (!cat.isEmpty()) b.append(" · ").append(cat);
