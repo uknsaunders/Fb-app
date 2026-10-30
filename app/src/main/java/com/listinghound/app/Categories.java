@@ -26,6 +26,7 @@ public final class Categories {
     }
 
     public static void load(Context c) {
+        if (Fetcher.app == null) Fetcher.app = c.getApplicationContext();
         if (!map.isEmpty()) return;
         Map<String, String> m = new HashMap<>();
         try {

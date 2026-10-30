@@ -110,6 +110,32 @@ public class EditSearchActivity extends Activity {
         t.setText("Advanced  " + (open ? "▴" : "▾") + (n > 0 ? "   ·  " + n + " set" : ""));
     }
 
+    /** Plain-English check that results really come from the chosen area. */
+    private String locationReport(Search s, Fetcher.Result r) {
+        if (s.location.trim().isEmpty()) {
+            return "📍 No location set — Facebook searches around wherever it thinks you are (your phone's location).";
+        }
+        java.util.List<Double> kms = new java.util.ArrayList<>();
+        for (Listing l : r.listings) if (l.km >= 0) kms.add(l.km);
+        java.util.Collections.sort(kms);
+        StringBuilder b = new StringBuilder("📍 ");
+        if (r.centre == null) {
+            b.append("Couldn't find “").append(s.location).append("” on the map — try the full town name or a postcode.");
+            return b.toString();
+        }
+        b.append(r.mapSearch ? "Searched around " + s.location + " using map coordinates."
+                : "Map search wasn't available, used the web address instead (" + MapSearch.lastNote + ").");
+        if (!kms.isEmpty()) {
+            double median = kms.get(kms.size() / 2);
+            b.append("\nHalf the results are within ").append(Math.round(median)).append(" km of ").append(s.location).append('.');
+            if (s.radiusKm > 0 && median > s.radiusKm * 2 + 10) {
+                b.append("\n⚠ Most results are far from ").append(s.location)
+                        .append(" — Facebook seems to be using your phone's location instead.");
+            }
+        }
+        return b.toString();
+    }
+
     private void showKinds() {
         java.util.Set<String> set = new java.util.LinkedHashSet<>();
         for (String p : cats.split(",")) if (!p.trim().isEmpty()) set.add(p.trim());
@@ -350,6 +376,7 @@ public class EditSearchActivity extends Activity {
             if (match == 0) m.append("Your title filters rule them all out — loosen “must contain” or “skip” words.");
             else m.append("\nThese are already listed, so they won't alert. You'll be told about new ones and price drops.");
         }
+        m.append("\n\n").append(locationReport(s, r));
         if (!catNote.isEmpty()) m.append(catNote).append("\n\nScreenshot this and send it to Claude.");
         new AlertDialog.Builder(this)
                 .setTitle(title)

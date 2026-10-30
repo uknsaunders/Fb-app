@@ -35,7 +35,10 @@ public final class Fetcher {
     private Fetcher() {}
 
     static final String FB = "https://www.facebook.com";
-    private static final String UA =
+    /** App context, for turning a search's location into map coordinates. */
+    static volatile android.content.Context app;
+
+    static final String UA =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                     + "Chrome/129.0.0.0 Safari/537.36";
     private static final int MAX_BYTES = 12 * 1024 * 1024;
@@ -45,6 +48,38 @@ public final class Fetcher {
         public boolean loginWall;
         public String error;
         public int httpCode;
+        /** True when Facebook was asked for results around exact map coordinates. */
+        public boolean mapSearch;
+        /** The point searched around, if known. */
+        public double[] centre;
+    }
+
+    static void walkInto(Object o, Map<String, Listing> found) {
+        walk(o, found, 0);
+    }
+
+    /** A plain page download (with the login cookies), or null. */
+    static String fetchPage(String pageUrl) {
+        Request.Builder rb = new Request.Builder()
+                .url(pageUrl)
+                .header("User-Agent", UA)
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                .header("Accept-Language", "en-GB,en;q=0.9")
+                .header("Sec-Fetch-Dest", "document")
+                .header("Sec-Fetch-Mode", "navigate")
+                .header("Sec-Fetch-Site", "none");
+        try {
+            String cookie = CookieManager.getInstance().getCookie(FB);
+            if (cookie != null && !cookie.isEmpty()) rb.header("Cookie", cookie);
+        } catch (Throwable ignored) {
+        }
+        try (Response resp = CLIENT.newCall(rb.build()).execute()) {
+            ResponseBody body = resp.body();
+            if (!resp.isSuccessful() || body == null) return null;
+            return read(body.byteStream());
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public static String buildUrl(Search s, String sort, int radiusKm) {
@@ -59,6 +94,11 @@ public final class Fetcher {
         if (qs.isEmpty()) qs = java.util.Collections.singletonList(s.query);
         java.util.Set<String> ids = new java.util.HashSet<>();
         int ok = 0, walls = 0;
+        // Pin the search to the typed location (otherwise Facebook uses wherever it thinks you are)
+        double[] centre = null;
+        if (app != null && !s.location.trim().isEmpty()) centre = Geo.centre(app, s);
+        merged.centre = centre;
+        boolean allMap = centre != null;
         for (int i = 0; i < qs.size(); i++) {
             if (i > 0) {
                 try {
@@ -66,7 +106,14 @@ public final class Fetcher {
                 } catch (InterruptedException ignored) {
                 }
             }
-            Result r = fetchUrl(buildUrl(s, qs.get(i), sort, radiusKm));
+            Result r = null;
+            if (centre != null) {
+                r = MapSearch.search(s, qs.get(i), sort, radiusKm > 0 ? radiusKm : 40, centre[0], centre[1]);
+            }
+            if (r == null) {
+                allMap = false;
+                r = fetchUrl(buildUrl(s, qs.get(i), sort, radiusKm));
+            }
             merged.httpCode = r.httpCode;
             if (r.error != null) {
                 merged.error = r.error;
@@ -81,6 +128,7 @@ public final class Fetcher {
         }
         if (ok > 0) merged.error = null;
         merged.loginWall = ok == 0 && walls > 0;
+        merged.mapSearch = allMap && ok > 0;
         return merged;
     }
 
