@@ -30,10 +30,13 @@ public class ListingViewActivity extends Activity {
     private WebView web;
     private String url;
 
+    public static final String EXTRA_SHARE = "share";
+
     public static Intent intent(android.content.Context c, Listing l) {
         return new Intent(c, ListingViewActivity.class)
                 .putExtra(EXTRA_URL, l.url())
-                .putExtra(EXTRA_TITLE, l.headline());
+                .putExtra(EXTRA_TITLE, l.headline())
+                .putExtra(EXTRA_SHARE, Share.text(l));
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -66,8 +69,17 @@ public class ListingViewActivity extends Activity {
         t.setEllipsize(android.text.TextUtils.TruncateAt.END);
         bar.addView(t, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
 
+        Button share = new Button(this, null, 0, R.style.TextButton);
+        share.setText("Share");
+        share.setOnClickListener(v -> {
+            String text = getIntent().getStringExtra(EXTRA_SHARE);
+            if (text == null) text = (title == null ? "" : title + "\n") + url;
+            startActivity(Share.chooser(title == null ? "Listing" : title, text));
+        });
+        bar.addView(share, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
         Button app = new Button(this, null, 0, R.style.TextButton);
-        app.setText("Facebook app");
+        app.setText("Facebook");
         app.setOnClickListener(v -> openInFacebook());
         bar.addView(app, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 

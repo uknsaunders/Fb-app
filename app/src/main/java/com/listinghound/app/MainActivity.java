@@ -432,9 +432,10 @@ public class MainActivity extends Activity {
             row.setOnLongClickListener(v -> {
                 new AlertDialog.Builder(this)
                         .setTitle(l.headline())
-                        .setItems(new String[]{"Open listing", "Remove from list", "Check listing time (diagnostic)"}, (d, which) -> {
+                        .setItems(new String[]{"Open listing", "Share listing", "Remove from list", "Check listing time (diagnostic)"}, (d, which) -> {
                             if (which == 0) startActivity(ListingViewActivity.intent(this, l));
-                            else if (which == 1) {
+                            else if (which == 1) Share.share(this, l);
+                            else if (which == 2) {
                                 Store.removeFind(this, l.key());
                                 renderFinds();
                             } else diagnose(l);
@@ -627,6 +628,16 @@ public class MainActivity extends Activity {
             ((TextView) row.findViewById(R.id.why)).setText(why.toString());
             ((TextView) row.findViewById(R.id.tag)).setText(l.searchName);
             row.setOnClickListener(v -> startActivity(ListingViewActivity.intent(this, l)));
+            row.setOnLongClickListener(v -> {
+                new AlertDialog.Builder(this)
+                        .setTitle(l.title)
+                        .setItems(new String[]{"Open listing", "Share listing"}, (d, which) -> {
+                            if (which == 0) startActivity(ListingViewActivity.intent(this, l));
+                            else Share.share(this, l);
+                        })
+                        .show();
+                return true;
+            });
             llDeals.addView(row);
         }
     }

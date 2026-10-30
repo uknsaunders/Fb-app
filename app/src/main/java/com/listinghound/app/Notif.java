@@ -126,7 +126,10 @@ public final class Notif {
                     .setGroup(GROUP)
                     .setWhen(l.foundAt)
                     .setShowWhen(true)
-                    .setContentIntent(pi);
+                    .setContentIntent(pi)
+                    .addAction(new Notification.Action.Builder(null, "Share",
+                            PendingIntent.getActivity(c, ("share" + l.key()).hashCode(), Share.chooser(l),
+                                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT)).build());
             if (l.thumb != null) {
                 b.setLargeIcon(l.thumb);
                 b.setStyle(new Notification.BigPictureStyle().bigPicture(l.thumb).setSummaryText(text));

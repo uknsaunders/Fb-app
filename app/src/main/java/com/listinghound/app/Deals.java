@@ -408,7 +408,10 @@ public final class Deals {
                 .setAutoCancel(true);
         if (pick.size() == 1) {
             String text = "DealRank " + top.score + " · " + top.reasons;
-            b.setContentText(text).setStyle(new Notification.BigTextStyle().bigText(text)).setContentIntent(viewTop);
+            b.setContentText(text).setStyle(new Notification.BigTextStyle().bigText(text)).setContentIntent(viewTop)
+                    .addAction(new Notification.Action.Builder(null, "Share",
+                            PendingIntent.getActivity(c, 45, Share.chooser(top),
+                                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT)).build());
             android.graphics.Bitmap thumb = Fetcher.thumbnail(top.imageUrl);
             if (thumb != null) b.setLargeIcon(thumb);
         } else {
