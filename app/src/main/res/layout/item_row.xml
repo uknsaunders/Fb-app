@@ -9,6 +9,18 @@
     android:paddingTop="10dp"
     android:paddingBottom="10dp">
 
+    <ImageView
+        android:id="@+id/thumb"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="top"
+        android:layout_marginEnd="12dp"
+        android:background="@drawable/soft_box"
+        android:clipToOutline="true"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"

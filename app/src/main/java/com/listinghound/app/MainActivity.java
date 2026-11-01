@@ -160,30 +160,29 @@ public class MainActivity extends Activity {
         int on = 0;
         for (Search s : Store.searches(this)) if (s.enabled) on++;
 
-        tvState.setText(running ? "Watching" : "Stopped");
+        tvState.setText(running ? "Watching " + on + " search" + (on == 1 ? "" : "es") : "Stopped");
         dot.setBackgroundTintList(ColorStateList.valueOf(getColor(running ? R.color.ok : R.color.subtext)));
-        btnToggle.setText(running ? "Stop watching" : "Start watching");
+        btnToggle.setText(running ? "Stop" : "Start");
         btnSlower.setEnabled(running && Store.intervalMin(this) < Store.INTERVALS[Store.INTERVALS.length - 1]);
 
         StringBuilder d = new StringBuilder();
         if (running) {
-            d.append(on).append(" search").append(on == 1 ? "" : "es")
-                    .append(" every ").append(Store.intervalMin(this)).append(" min");
+            d.append("Every ").append(Store.intervalMin(this)).append(" min");
             long next = Store.nextCheck(this);
-            if (next == 0) d.append("\nChecking now…");
+            if (next == 0) d.append(" · checking now…");
             else if (next < System.currentTimeMillis() - 60_000L)
-                d.append("\nCheck overdue (was due ").append(Notif.time(this, next)).append(") — phone paused it");
-            else d.append("\nNext check ").append(Notif.time(this, next));
+                d.append(" · overdue, phone paused it");
+            else d.append(" · next ").append(Notif.time(this, next));
             long stopAt = Store.stopAt(this);
             if (stopAt > 0) d.append(" · stops ").append(Notif.time(this, stopAt));
         } else {
-            d.append(on == 0 ? "Add a search, then start watching." : on + " search" + (on == 1 ? "" : "es") + " ready");
+            d.append(on == 0 ? "Add a search, then tap Start" : "Tap Start to begin watching");
         }
         long last = Store.lastCheck(this);
         if (last > 0) {
-            d.append("\nLast check ")
+            d.append("\nLast: ").append(Store.lastResult(this)).append(" (")
                     .append(DateUtils.getRelativeTimeSpanString(last, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS))
-                    .append(" — ").append(Store.lastResult(this));
+                    .append(')');
         }
         tvDetail.setText(d.toString());
     }
@@ -356,29 +355,60 @@ public class MainActivity extends Activity {
         List<Search> list = Store.searches(this);
         LayoutInflater inf = getLayoutInflater();
         if (list.isEmpty()) {
-            addEmpty(llSearches, "No searches yet. Tap “+ Add search”.");
+            TextView t = new TextView(this);
+            t.setText("No searches yet.\n\nTap “New search” and tell Listing Hound what you're after — "
+                    + "it will keep checking Facebook Marketplace and tell you the moment something turns up.");
+            t.setTextColor(getColor(R.color.subtext));
+            t.setTextSize(15);
+            t.setLineSpacing(0, 1.2f);
+            t.setBackgroundResource(R.drawable.card);
+            int p = (int) (18 * getResources().getDisplayMetrics().density);
+            t.setPadding(p, p, p, p);
+            llSearches.addView(t);
             return;
         }
-        for (int i = 0; i < list.size(); i++) {
-            Search s = list.get(i);
-            View row = inf.inflate(R.layout.item_row, llSearches, false);
-            ((TextView) row.findViewById(R.id.title)).setText(s.displayName());
-            ((TextView) row.findViewById(R.id.sub)).setText(s.summary());
-            Switch sw = row.findViewById(R.id.toggle);
-            sw.setVisibility(View.VISIBLE);
+        // What each search has found in the last 24 hours
+        long dayAgo = System.currentTimeMillis() - 24 * 3600_000L;
+        java.util.Map<String, int[]> today = new java.util.HashMap<>();
+        for (Listing l : Store.finds(this)) {
+            if (l.foundAt < dayAgo) continue;
+            int[] c = today.computeIfAbsent(l.searchId, k -> new int[2]);
+            if ("drop".equals(l.kind)) c[1]++;
+            else c[0]++;
+        }
+        for (Search s : list) {
+            View card = inf.inflate(R.layout.item_search, llSearches, false);
+            ((TextView) card.findViewById(R.id.name)).setText(s.displayName());
+            ((TextView) card.findViewById(R.id.summary)).setText(s.summary());
+            TextView act = card.findViewById(R.id.activity);
+            int[] c = today.get(s.id);
+            if (!s.enabled) {
+                act.setText("Paused");
+                act.setTextColor(getColor(R.color.subtext));
+            } else if (c == null) {
+                act.setText("Nothing new today");
+                act.setTextColor(getColor(R.color.subtext));
+            } else {
+                StringBuilder t = new StringBuilder();
+                if (c[0] > 0) t.append(c[0]).append(" new");
+                if (c[1] > 0) t.append(t.length() > 0 ? " · " : "").append(c[1]).append(" price drop").append(c[1] == 1 ? "" : "s");
+                act.setText(t.append(" today").toString());
+                act.setTextColor(getColor(R.color.accent));
+            }
+            Switch sw = card.findViewById(R.id.toggle);
             sw.setChecked(s.enabled);
-            sw.setOnCheckedChangeListener((btn, on) -> {
+            sw.setOnCheckedChangeListener((btn, onNow) -> {
                 Search cur = Store.search(this, s.id);
                 if (cur == null) return;
-                cur.enabled = on;
+                cur.enabled = onNow;
                 Store.upsert(this, cur);
                 WatchService.send(this, WatchService.ACT_RESCHEDULE);
                 refreshStatus();
+                renderSearches();
             });
-            row.setOnClickListener(v -> startActivity(
+            card.setOnClickListener(v -> startActivity(
                     new Intent(this, EditSearchActivity.class).putExtra("id", s.id)));
-            if (i > 0) addDivider(llSearches);
-            llSearches.addView(row);
+            llSearches.addView(card);
         }
     }
 
@@ -425,6 +455,7 @@ public class MainActivity extends Activity {
             ((TextView) row.findViewById(R.id.title)).setText(l.headline());
             String detail = findDetail(l);
             ((TextView) row.findViewById(R.id.sub)).setText(detail.replaceFirst("^[\\s·]+", "").trim());
+            Thumbs.load(row.findViewById(R.id.thumb), l.imageUrl);
             TextView tag = row.findViewById(R.id.tag);
             tag.setText(l.searchName);
             tag.setVisibility(l.searchName.isEmpty() ? View.GONE : View.VISIBLE);
@@ -448,25 +479,20 @@ public class MainActivity extends Activity {
         }
     }
 
-    private static final String[] TAB_KEYS = {"setup", "searches", "deals", "finds"};
-    private static final int[] TAB_IDS = {R.id.tabSetup, R.id.tabSearches, R.id.tabDeals, R.id.tabFinds};
-    private static final int[] SEC_IDS = {R.id.secSetup, R.id.secSearches, R.id.secDeals, R.id.secFinds};
+    private static final String[] TAB_KEYS = {"searches", "finds", "deals", "setup"};
+    private static final int[] TAB_IDS = {R.id.tabSearches, R.id.tabFinds, R.id.tabDeals, R.id.tabSetup};
+    private static final int[] SEC_IDS = {R.id.secSearches, R.id.secFinds, R.id.secDeals, R.id.secSetup};
 
     private void setupTabs() {
         for (int i = 0; i < TAB_KEYS.length; i++) {
             String k = TAB_KEYS[i];
             findViewById(TAB_IDS[i]).setOnClickListener(v -> showTab(k));
         }
-        intro(R.id.secSetup, "How often Listing Hound checks Facebook, and when it stops by itself. "
-                + "Log in to Facebook here, and allow battery and alarm access so checks keep running while your phone sleeps.");
-        intro(R.id.secSearches, "What you're looking for. Each search has its own area, price range and words to include or skip. "
-                + "You choose what you're told about: new listings, price drops, renewed listings and title changes. "
-                + "Tap a search to change it; use its switch to pause it.");
-        intro(R.id.secDeals, "Once a day Listing Hound scores what's for sale now from 0 to 100: price against the typical price, "
-                + "reductions, how long it's been unsold, how new it is and how far away. "
-                + "High scores send a “Consider this” alert. Settings changes what counts.");
-        intro(R.id.secFinds, "Everything the watcher has spotted since it started, newest first. "
-                + "Use the buttons to show one kind. Tap to open, long-press to remove; Tidy removes anything outside your radius.");
+        intro(R.id.secSetup, "How often to check, Facebook login, and the phone permissions that keep checks running while it sleeps.");
+        intro(R.id.secSearches, "What you're hunting for. Tap a search to change it; use its switch to pause it.");
+        intro(R.id.secDeals, "A daily score from 0 to 100 for what's on sale now, so the best buys rise to the top. "
+                + "High scores send a “Consider this” alert.");
+        intro(R.id.secFinds, "Everything spotted, newest first. Tap to open; long-press to share or remove.");
         // Deal settings also live under Set-up, so all settings are in one place
         LinearLayout setup = findViewById(R.id.secSetup);
         Button ds = new Button(this, null, 0, R.style.TextButton);
@@ -474,9 +500,7 @@ public class MainActivity extends Activity {
         ds.setOnClickListener(v -> startActivity(new Intent(this, DealsSettingsActivity.class)));
         setup.addView(ds);
 
-        String saved = getSharedPreferences("ui", MODE_PRIVATE).getString("tab", null);
-        if (saved == null) saved = Store.searches(this).isEmpty() ? "searches" : "finds";
-        showTab(saved);
+        showTab("searches"); // the app always opens on your searches
     }
 
     private void intro(int sectionId, String text) {
@@ -497,10 +521,13 @@ public class MainActivity extends Activity {
             boolean on = TAB_KEYS[i].equals(key);
             findViewById(SEC_IDS[i]).setVisibility(on ? View.VISIBLE : View.GONE);
             TextView t = findViewById(TAB_IDS[i]);
-            t.setBackgroundResource(on ? R.drawable.pill_on : 0);
-            t.setTextColor(getColor(on ? R.color.on_accent : R.color.text));
+            int col = getColor(on ? R.color.accent : R.color.subtext);
+            t.setTextColor(col);
+            t.setCompoundDrawableTintList(ColorStateList.valueOf(col));
             t.setTypeface(null, on ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
         }
+        View sc = findViewById(R.id.scroll);
+        if (sc != null) sc.scrollTo(0, 0);
     }
 
     static final String[] WIN_LABELS = {"Last hour", "Last day", "Last week", "Everything"};

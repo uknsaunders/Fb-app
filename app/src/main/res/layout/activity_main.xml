@@ -1,83 +1,157 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/scroll"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:background="@color/bg"
+    android:orientation="vertical">
 
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="20dp"
-        android:paddingBottom="32dp">
+        android:paddingTop="14dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp">
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="10dp"
+            android:contentDescription="@null"
+            android:src="@mipmap/ic_launcher" />
+
+        <TextView
+            android:id="@+id/tvScreenTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/app_name"
+            android:textColor="@color/text"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Status strip -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/card"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="14dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="6dp"
+        android:paddingBottom="8dp">
+
+        <View
+            android:id="@+id/dot"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_marginEnd="10dp"
+            android:background="@drawable/pill" />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="12dp"
-                android:contentDescription="@null"
-                android:src="@mipmap/ic_launcher" />
+            android:layout_weight="1"
+            android:orientation="vertical">
 
             <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/app_name"
-                android:textColor="@color/text"
-                android:textSize="28sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- Status -->
-        <LinearLayout style="@style/Card">
-
-            <LinearLayout
+                android:id="@+id/tvState"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <View
-                    android:id="@+id/dot"
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@drawable/pill" />
-
-                <TextView
-                    android:id="@+id/tvState"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textColor="@color/text"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
+                android:textColor="@color/text"
+                android:textSize="15sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tvDetail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:lineSpacingMultiplier="1.15"
+                android:ellipsize="end"
+                android:maxLines="2"
                 android:textColor="@color/subtext"
-                android:textSize="14sp" />
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnCheckNow"
+            style="@style/TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:minWidth="0dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:text="Check" />
+
+        <Button
+            android:id="@+id/btnToggle"
+            style="@style/SmallPrimaryButton"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp" />
+
+        <Button
+            android:id="@+id/btnSlower"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:id="@+id/secSearches"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/btnAdd"
+                style="@style/PrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="+  New search" />
+
+            <LinearLayout
+                android:id="@+id/llSearches"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/secFinds"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tvStats"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginBottom="8dp"
                 android:background="@drawable/soft_box"
                 android:lineSpacingMultiplier="1.15"
                 android:paddingStart="12dp"
@@ -87,50 +161,140 @@
                 android:textColor="@color/text"
                 android:textSize="14sp" />
 
-            <Button
-                android:id="@+id/btnToggle"
-                style="@style/PrimaryButton"
+            <!-- Finds -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp" />
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/SectionTitle"
+                    android:text="Latest" />
+
+                <Button
+                    android:id="@+id/btnTidy"
+                    style="@style/TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tidy" />
+
+                <Button
+                    android:id="@+id/btnClear"
+                    style="@style/TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Clear" />
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <Button
-                    android:id="@+id/btnCheckNow"
-                    style="@style/TextButton"
-                    android:layout_width="0dp"
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:text="Keep:"
+                    android:textColor="@color/subtext"
+                    android:textSize="14sp" />
+
+                <Spinner
+                    android:id="@+id/spFindsWindow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp" />
+            </LinearLayout>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/llFilters"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
+
+            <LinearLayout
+                android:id="@+id/llFinds"
+                style="@style/Card"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/secDeals"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Deals -->
+            <LinearLayout
+                android:id="@+id/dealsHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/SectionTitle"
+                    android:text="DealRank" />
+
+                <Button
+                    android:id="@+id/btnDealsNow"
+                    style="@style/TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:text="Check now" />
 
                 <Button
-                    android:id="@+id/btnSlower"
+                    android:id="@+id/btnDealsClear"
                     style="@style/TextButton"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Slower" />
+                    android:text="Clear" />
+
+                <Button
+                    android:id="@+id/btnDealsSettings"
+                    style="@style/TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Settings" />
             </LinearLayout>
-        </LinearLayout>
 
-        <!-- Tabs -->
-        <LinearLayout
-            android:id="@+id/tabs"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:background="@drawable/pill_off"
-            android:orientation="horizontal"
-            android:padding="4dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <TextView android:id="@+id/tabSetup" style="@style/Tab" android:text="Set-up" />
-            <TextView android:id="@+id/tabSearches" style="@style/Tab" android:text="Searches" />
-            <TextView android:id="@+id/tabDeals" style="@style/Tab" android:text="DealRank" />
-            <TextView android:id="@+id/tabFinds" style="@style/Tab" android:text="Latest" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Keep:"
+                    android:textColor="@color/subtext"
+                    android:textSize="14sp" />
+
+                <Spinner
+                    android:id="@+id/spDealsWindow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llDeals"
+                style="@style/Card"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
+
         </LinearLayout>
 
         <LinearLayout
@@ -240,181 +404,41 @@
 
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/secSearches"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <!-- Searches -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    style="@style/SectionTitle"
-                    android:text="Searches" />
-
-                <Button
-                    android:id="@+id/btnAdd"
-                    style="@style/TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="+ Add search" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/llSearches"
-                style="@style/Card"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp" />
-
         </LinearLayout>
+    </ScrollView>
 
-        <LinearLayout
-            android:id="@+id/secDeals"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+    <!-- Bottom navigation -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/line" />
 
-            <!-- Deals -->
-            <LinearLayout
-                android:id="@+id/dealsHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+    <LinearLayout
+        android:id="@+id/tabs"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:background="@color/card"
+        android:orientation="horizontal">
 
-                <TextView
-                    style="@style/SectionTitle"
-                    android:text="DealRank" />
-
-                <Button
-                    android:id="@+id/btnDealsNow"
-                    style="@style/TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Check now" />
-
-                <Button
-                    android:id="@+id/btnDealsClear"
-                    style="@style/TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Clear" />
-
-                <Button
-                    android:id="@+id/btnDealsSettings"
-                    style="@style/TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Settings" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Keep:"
-                    android:textColor="@color/subtext"
-                    android:textSize="14sp" />
-
-                <Spinner
-                    android:id="@+id/spDealsWindow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/llDeals"
-                style="@style/Card"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/secFinds"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <!-- Finds -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    style="@style/SectionTitle"
-                    android:text="Latest" />
-
-                <Button
-                    android:id="@+id/btnTidy"
-                    style="@style/TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tidy" />
-
-                <Button
-                    android:id="@+id/btnClear"
-                    style="@style/TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Clear" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Keep:"
-                    android:textColor="@color/subtext"
-                    android:textSize="14sp" />
-
-                <Spinner
-                    android:id="@+id/spFindsWindow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp" />
-            </LinearLayout>
-
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:scrollbars="none">
-
-                <LinearLayout
-                    android:id="@+id/llFilters"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal" />
-            </HorizontalScrollView>
-
-            <LinearLayout
-                android:id="@+id/llFinds"
-                style="@style/Card"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp" />
-        </LinearLayout>
-
+        <TextView
+            android:id="@+id/tabSearches"
+            style="@style/NavItem"
+            android:drawableTop="@drawable/ic_nav_search"
+            android:text="Searches" />
+        <TextView
+            android:id="@+id/tabFinds"
+            style="@style/NavItem"
+            android:drawableTop="@drawable/ic_nav_latest"
+            android:text="Latest" />
+        <TextView
+            android:id="@+id/tabDeals"
+            style="@style/NavItem"
+            android:drawableTop="@drawable/ic_nav_deals"
+            android:text="DealRank" />
+        <TextView
+            android:id="@+id/tabSetup"
+            style="@style/NavItem"
+            android:drawableTop="@drawable/ic_nav_setup"
+            android:text="Set-up" />
     </LinearLayout>
-</ScrollView>
+</LinearLayout>
